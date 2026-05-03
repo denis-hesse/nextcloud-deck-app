@@ -30,10 +30,10 @@ HTML = r"""<!DOCTYPE html>
     --info: #1d4ed8; --info-bg: #eff6ff; --info-b: #bfdbfe;
     --r: 10px; --rs: 6px;
   }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; margin:0; }
-  .app-layout { display:flex; gap:0; min-height:100vh; align-items:flex-start; }
-  .wrap { flex:1; max-width:620px; padding:2rem 1rem; min-width:0; }
-  .history-panel { width:280px; min-width:280px; background:var(--surface); border-left:1px solid var(--border); min-height:100vh; display:flex; flex-direction:column; position:sticky; top:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; height:100vh; overflow:hidden; }
+  .app-layout { display:flex; height:100vh; }
+  .wrap { flex:1; max-width:620px; padding:2rem 1rem; overflow-y:auto; height:100vh; }
+  .history-panel { width:280px; min-width:280px; background:var(--surface); border-left:1px solid var(--border); height:100vh; display:flex; flex-direction:column; }
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
   .history-list { flex:1; overflow-y:auto; padding:8px; }

@@ -312,55 +312,47 @@ class GmailWatcher:
 
     def fetch_deck_mails(self):
         try:
+            from datetime import datetime, timedelta
+            from email.utils import parsedate_to_datetime
+
             mail = self.connect()
             new_mails = []
 
-            # Chercher dans Messages envoyés les mails contenant @deck
-            # ET n'ayant pas encore le label DECK (pas encore traités)
+            # Sélectionner Messages envoyés
             status, _ = mail.select('"[Gmail]/Messages envoy&AOk-s"')
             if status != 'OK':
                 print("  Impossible d'accéder aux Messages envoyés")
                 mail.logout()
                 return []
 
-            # Chercher mails avec @deck dans le corps, sans label DECK
-            # Récupérer uniquement les mails récents (dernières 24h)
-            from email.utils import parsedate_to_datetime
-            from datetime import datetime, timedelta, timezone
-            since = (datetime.now() - timedelta(minutes=10)).strftime("%d-%b-%Y")
+            # Chercher les mails d'aujourd'hui
+            since = datetime.now().strftime("%d-%b-%Y")
             _, data = mail.search(None, f'SINCE {since}')
             mail_ids = data[0].split()
 
             # Récupérer les mails traités côté proxy
             try:
-                r = urllib.request.urlopen(f'http://localhost:{self.cfg["proxy_port"]}/get-processed', timeout=2)
+                r = urllib.request.urlopen(
+                    f'http://localhost:{self.cfg["proxy_port"]}/get-processed', timeout=2)
                 proxy_processed = set(json.loads(r.read()))
             except Exception:
                 proxy_processed = set()
 
+            cutoff = datetime.now() - timedelta(minutes=30)
+
             for mid in mail_ids:
                 mid_str = mid.decode() if isinstance(mid, bytes) else str(mid)
+
+                # Déjà traité ?
                 if mid in self.processed or mid_str in proxy_processed:
                     continue
 
-                # Vérifier le label DECK via X-GM-LABELS
+                # Vérifier le label DECK (déjà traité précédemment)
                 try:
-                    _, ldata = mail.fetch(mid, '(X-GM-LABELS FLAGS)')
+                    _, ldata = mail.fetch(mid, '(X-GM-LABELS)')
                     lstr = ldata[0].decode('utf-8', errors='replace') if ldata[0] else ''
                     if 'DECK' in lstr:
                         self.processed.add(mid)
-        # Notifier le proxy pour marquer ce mail traité côté serveur
-        try:
-            notify = json.dumps({'mid': mid.decode() if isinstance(mid, bytes) else str(mid)}).encode()
-            req = urllib.request.Request(
-                f'http://localhost:{self.cfg["proxy_port"]}/mark-processed',
-                data=notify,
-                headers={'Content-Type': 'application/json'},
-                method='POST'
-            )
-            urllib.request.urlopen(req, timeout=3)
-        except Exception:
-            pass
                         continue
                 except Exception:
                     pass
@@ -370,24 +362,26 @@ class GmailWatcher:
                 raw = msg_data[0][1]
                 msg = email.message_from_bytes(raw)
 
-                # Filtrer : vérifier si @deck est dans le corps
+                # Vérifier la date (30 dernières minutes)
+                try:
+                    msg_date = parsedate_to_datetime(msg.get('Date', ''))
+                    if msg_date.tzinfo:
+                        from datetime import timezone
+                        msg_date = msg_date.astimezone(timezone.utc).replace(tzinfo=None)
+                    if msg_date < cutoff:
+                        self.processed.add(mid)
+                        continue
+                except Exception:
+                    pass
+
+                # Vérifier si @deck est dans le corps ou le sujet
                 body = get_body(msg)
-                if '@deck' not in body.lower():
+                subject = decode_header(msg.get('Subject', ''))
+                if '@deck' not in body.lower() and '@deck' not in subject.lower():
                     self.processed.add(mid)
-        # Notifier le proxy pour marquer ce mail traité côté serveur
-        try:
-            notify = json.dumps({'mid': mid.decode() if isinstance(mid, bytes) else str(mid)}).encode()
-            req = urllib.request.Request(
-                f'http://localhost:{self.cfg["proxy_port"]}/mark-processed',
-                data=notify,
-                headers={'Content-Type': 'application/json'},
-                method='POST'
-            )
-            urllib.request.urlopen(req, timeout=3)
-        except Exception:
-            pass
                     continue
 
+                print(f"  @deck trouvé : {subject}")
                 new_mails.append(('SENT', mid, msg))
 
             mail.logout()
