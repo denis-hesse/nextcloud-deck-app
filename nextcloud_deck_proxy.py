@@ -456,34 +456,17 @@ function resetForm(){
   selectedTagId=null;
 }
 
-// Polling pour détecter un nouveau prefill automatiquement
-let lastPrefillTitre = '';
-async function pollPrefill(){
+// Rafraîchissement automatique toutes les 15s si un prefill est disponible
+async function checkAndRefresh(){
   try {
     const r = await fetch('/has-prefill').then(res=>res.json());
-    if(r.has && r.titre !== lastPrefillTitre){
-      lastPrefillTitre = r.titre;
-      // Nouveau prefill disponible — charger les données
-      const data = await fetch('/get-prefill').then(res=>res.json());
-      if(data.titre) document.getElementById('title').value = data.titre;
-      if(data.description) document.getElementById('desc').value = data.description;
-      if(data.pdf) prefillPdf(data.pdf);
-      if(data.boardId){
-        const sel = document.getElementById('board');
-        for(let i=0; i<sel.options.length; i++){
-          if(sel.options[i].value == data.boardId){
-            sel.selectedIndex = i;
-            onBoardChange();
-            break;
-          }
-        }
-      }
-      // Notification visuelle
+    if(r.has){
       document.title = '📧 Nouveau mail — Nextcloud Deck';
+      window.location.reload();
     }
   } catch(e){}
 }
-setInterval(pollPrefill, 3000);
+setInterval(checkAndRefresh, 15000);
 
 // Charger et rafraîchir l'historique toutes les 5 secondes
 async function loadHistory(){
@@ -779,17 +762,23 @@ class Handler(BaseHTTPRequestHandler):
         email_addr=data.get('email','')
         password=data.get('password','')
         mid=data.get('mid','')
-        label=data.get('label','DECK')
         result={'ok': False, 'msg': ''}
         try:
             m=imap_lib.IMAP4_SSL('imap.gmail.com',993)
             m.login(email_addr, password)
+            # Sélectionner Messages envoyés
             m.select('"[Gmail]/Messages envoy&AOk-s"')
-            # Attribuer le label DECK au mail
-            m.store(mid.encode(), '+X-GM-LABELS', label)
+            # Copier le mail dans le dossier DECK (crée le label automatiquement)
+            res, _ = m.copy(mid.encode(), 'DECK')
+            if res == 'OK':
+                result={'ok': True, 'msg': 'Label DECK attribué via copie'}
+                print(f"  Label DECK attribué au mail.")
+            else:
+                # Fallback : essayer avec X-GM-LABELS
+                m.store(mid.encode(), '+X-GM-LABELS', '\\DECK')
+                result={'ok': True, 'msg': 'Label DECK attribué via X-GM-LABELS'}
+                print(f"  Label DECK attribué (fallback).")
             m.logout()
-            result={'ok': True, 'msg': 'Label DECK attribué'}
-            print(f"  Label DECK attribué au mail après validation.")
         except Exception as e:
             result={'ok': False, 'msg': str(e)}
             print(f"  Erreur attribution label : {e}")

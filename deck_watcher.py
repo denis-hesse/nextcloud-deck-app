@@ -195,20 +195,25 @@ Corps :
 Voici les tableaux Nextcloud Deck disponibles :
 {boards_list}
 
+RÈGLES STRICTES pour la description :
+- Ne jamais mentionner : @deck, Nextcloud, outils techniques, l'expéditeur, ses coordonnées, son profil
+- Si le mail est un test ou vide de contenu réel : écrire uniquement "**Résumé**\\nMail de test." sans autres sections
+- Proportionner la longueur au contenu réel du mail — peu de contenu = peu de texte
+
 Ta mission :
 1. Choisir le tableau le plus pertinent (basé sur le nom du client/projet dans l'email)
 2. Proposer un titre court et clair pour la carte (max 80 caractères)
-3. Rédiger une description structurée en 3 paragraphes :
-   - **Résumé** : 2-3 phrases synthétisant l'essentiel du mail
-   - **Actions à suivre** : liste des actions concrètes à mener si le mail en implique, sinon omettre ce paragraphe
-   - **Synthèse** : analyse plus développée, proportionnelle à la richesse du contenu du mail (de 3 à 10 phrases selon la complexité)
+3. Rédiger une description structurée uniquement si le mail a un contenu substantiel :
+   - **Résumé** : 1-3 phrases sur l'essentiel du contenu
+   - **Actions à suivre** : uniquement si des actions concrètes sont demandées, sinon omettre
+   - **Synthèse** : uniquement si contenu riche, un retour à la ligne après chaque phrase
 
 Réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après :
 {{
   "boardId": <id du tableau choisi>,
   "boardTitle": "<nom du tableau>",
   "titre": "<titre de la carte>",
-  "description": "**Résumé**\\n<résumé>\\n\\n**Actions à suivre**\\n<actions ou omis, une par ligne>\\n\\n**Synthèse**\\n<synthèse développée avec un retour à la ligne après chaque phrase>"
+  "description": "<description selon les règles ci-dessus>"
 }}"""
 
     payload = json.dumps({
