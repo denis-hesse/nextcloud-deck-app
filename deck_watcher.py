@@ -5,7 +5,7 @@ sys.stdout.flush()
 """
 Deck Watcher — Surveillance Gmail et création de cartes Nextcloud Deck
 -----------------------------------------------------------------------
-Ce script surveille ta boîte Gmail, détecte les mails labelisés DECK,
+Ce script surveille une boîte Gmail, détecte les mails labelisés DECK,
 les analyse avec Claude et ouvre le formulaire pré-rempli dans Chrome.
 
 Prérequis :
