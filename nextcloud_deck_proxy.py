@@ -659,7 +659,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _has_prefill(self):
         global prefill_data
-        has = bool(prefill_data.get('titre'))
+        has = bool(prefill_data.get('titre')) and not prefill_data.get('_processed', False)
         b = json.dumps({'has': has, 'titre': prefill_data.get('titre','')}).encode()
         self.send_response(200)
         self.send_cors()
@@ -747,12 +747,14 @@ class Handler(BaseHTTPRequestHandler):
         # Retirer le mail traité de la file
         if prefill_queue:
             prefill_queue.pop(0)
-        # Charger le suivant ou vider
+        # Charger le suivant ou garder le dernier affiché
         if prefill_queue:
             prefill_data = prefill_queue[0]
             print(f"  Mail suivant chargé : {prefill_data.get('titre','')[:50]}")
         else:
-            prefill_data = {}
+            # Garder prefill_data pour que la page puisse encore le lire
+            # mais marquer comme 'traité' pour que pollPrefill ne le recharge pas
+            prefill_data['_processed'] = True
             print(f"  File d'attente vide.")
         # Ajouter à l'historique
         titre = prefill_data.get('titre','') if prefill_queue else data.get('titre','')
@@ -804,6 +806,7 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get('Content-Length', 0))
         data = json.loads(self.rfile.read(length))
         print(f"  Prefill reçu : {data.get('titre','')[:50]}")
+        data['_processed'] = False
         prefill_queue.append(data)
         # Si c'est le premier mail, le charger immédiatement
         if len(prefill_queue) == 1:

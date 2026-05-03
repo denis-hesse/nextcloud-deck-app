@@ -417,19 +417,7 @@ class GmailWatcher:
             pdf_path
         )
 
-        self.processed.add(mid)
-        # Notifier le proxy pour marquer ce mail traité côté serveur
-        try:
-            notify = json.dumps({'mid': mid.decode() if isinstance(mid, bytes) else str(mid)}).encode()
-            req = urllib.request.Request(
-                f'http://localhost:{self.cfg["proxy_port"]}/mark-processed',
-                data=notify,
-                headers={'Content-Type': 'application/json'},
-                method='POST'
-            )
-            urllib.request.urlopen(req, timeout=3)
-        except Exception:
-            pass
+        self.processed.add(mid)  # Mémorisé en session, mark-processed appelé après validation
 
     def run(self):
         print(f"\n  Deck Watcher démarré", flush=True)
