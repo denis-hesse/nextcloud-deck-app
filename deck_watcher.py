@@ -43,7 +43,7 @@ def load_config():
             'email': os.environ.get('GMAIL_EMAIL', ''),
             'app_password': os.environ.get('GMAIL_APP_PASSWORD', ''),
             'label': os.environ.get('GMAIL_LABEL', 'DECK'),
-            'check_interval_seconds': int(os.environ.get('CHECK_INTERVAL', '120'))
+            'check_interval_seconds': int(os.environ.get('CHECK_INTERVAL', '30'))
         },
         'anthropic': {
             'api_key': os.environ.get('ANTHROPIC_API_KEY', '')
@@ -338,7 +338,7 @@ class GmailWatcher:
             except Exception:
                 proxy_processed = set()
 
-            cutoff = datetime.now() - timedelta(minutes=30)
+            cutoff = datetime.now() - timedelta(minutes=10)
 
             for mid in mail_ids:
                 mid_str = mid.decode() if isinstance(mid, bytes) else str(mid)
