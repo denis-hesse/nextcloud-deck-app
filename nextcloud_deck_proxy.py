@@ -428,11 +428,10 @@ async function createCard(){
     try {
       const pf = await fetch('/get-prefill').then(r=>r.json());
       const mid = pf.mail_mid || '';
-      const titreModifie = document.getElementById('title').value.trim();
       const res = await fetch('/mark-processed',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({mid, action: 'Créé', titre: titreModifie})
+        body:JSON.stringify({mid, action: 'Créé', titre: title})
       }).then(r=>r.json());
       if(res.next){
         // Mail suivant disponible — recharger la page
