@@ -567,24 +567,26 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const ok=await checkConnection();
   if(ok){
     await loadBoards();
-    // Récupérer les données pré-remplies depuis le proxy
+    // Récupérer les données pré-remplies depuis le proxy uniquement si disponibles
     try {
-      const r = await fetch('/get-prefill');
-      const data = await r.json();
-      if(data.titre) document.getElementById('title').value = data.titre;
-      if(data.description) document.getElementById('desc').value = data.description;
-      if(data.pdf) prefillPdf(data.pdf);
-      if(data.boardId){
-        setTimeout(()=>{
-          const sel = document.getElementById('board');
-          for(let i=0; i<sel.options.length; i++){
-            if(sel.options[i].value == data.boardId){
-              sel.selectedIndex = i;
-              onBoardChange();
-              break;
+      const check = await fetch('/has-prefill').then(r=>r.json());
+      if(check.has){
+        const data = await fetch('/get-prefill').then(r=>r.json());
+        if(data.titre) document.getElementById('title').value = data.titre;
+        if(data.description) document.getElementById('desc').value = data.description;
+        if(data.pdf) prefillPdf(data.pdf);
+        if(data.boardId){
+          setTimeout(()=>{
+            const sel = document.getElementById('board');
+            for(let i=0; i<sel.options.length; i++){
+              if(sel.options[i].value == data.boardId){
+                sel.selectedIndex = i;
+                onBoardChange();
+                break;
+              }
             }
-          }
-        }, 1500);
+          }, 1500);
+        }
       }
     } catch(e) { console.log('Pas de prefill:', e); }
   }
@@ -816,9 +818,7 @@ class Handler(BaseHTTPRequestHandler):
             prefill_data = prefill_queue[0]
             print(f"  Mail suivant chargé : {prefill_data.get('titre','')[:50]}")
         else:
-            # Garder prefill_data pour que la page puisse encore le lire
-            # mais marquer comme 'traité' pour que pollPrefill ne le recharge pas
-            prefill_data['_processed'] = True
+            prefill_data = {}
             print(f"  File d'attente vide.")
         # Ajouter à l'historique
         titre = prefill_data.get('titre','') if prefill_queue else data.get('titre','')
