@@ -146,15 +146,15 @@ Ta mission :
 3. Description structurée :
    - Première ligne TOUJOURS : "{subject} — {date_str}" (sans label, sans gras)
    - **Résumé** : 1-3 phrases sur l'essentiel (si mail de test : "Mail de test." uniquement)
-   - **Actions à suivre** : uniquement si actions concrètes demandées
    - **Synthèse** : uniquement si contenu riche, une phrase par ligne
+   - **Actions à suivre** : uniquement si actions concrètes demandées, liste sans ligne vide entre chaque action
 
 Réponds UNIQUEMENT en JSON :
 {{
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
   "titre": "<titre sans Re:/Fw:/Fwd:>",
-  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé>\\n\\n**Actions à suivre**\\n<si applicable>\\n\\n**Synthèse**\\n<si applicable>"
+  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé>\\n\\n**Synthèse**\\n<si applicable>\\n\\n**Actions à suivre**\\n<action1\\naction2\\naction3 — si applicable>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",
