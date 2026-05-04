@@ -407,6 +407,7 @@ class GmailWatcher:
                     continue
 
                 print(f"  @deck trouvé : {subject}", flush=True)
+                print(f"  mid={mid} mid_str={mid_str}", flush=True)
                 new_mails.append(('SENT', mid, msg))
 
             mail.logout()

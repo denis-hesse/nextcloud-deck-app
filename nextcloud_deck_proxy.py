@@ -41,7 +41,6 @@ HTML = r"""<!DOCTYPE html>
   .history-item { padding:8px 10px; border-radius:var(--rs); margin-bottom:4px; background:var(--surface2); border:1px solid var(--border); }
   .history-date { font-size:11px; color:var(--hint); font-family:'DM Mono',monospace; margin-bottom:2px; }
   .history-titre { font-size:12px; color:var(--text); line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .wrap { width:100%; max-width:580px; }
   .hdr { display:flex; align-items:center; gap:12px; margin-bottom:1.5rem; }
   .logo { width:38px; height:38px; background:var(--blue); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .hdr h1 { font-size:20px; font-weight:600; }
@@ -457,7 +456,6 @@ function resetForm(){
   document.getElementById('board').value='';
   document.getElementById('stack').innerHTML='<option value="">— sélectionner —</option>';
   document.getElementById('tags-field').style.display='none';
-  document.getElementById('users-field').style.display='none';
   document.getElementById('assignee').innerHTML='<option value="">— aucun —</option>';
   document.getElementById('tags-wrap').innerHTML='';
   selectedTagId=null;
@@ -809,6 +807,7 @@ class Handler(BaseHTTPRequestHandler):
         data=json.loads(self.rfile.read(length))
         mid=data.get('mid','')
         processed_mids.add(mid)
+        print(f"  mark-processed mid='{mid}' type={type(mid).__name__}", flush=True)
         # Retirer le mail traité de la file
         if prefill_queue:
             prefill_queue.pop(0)
