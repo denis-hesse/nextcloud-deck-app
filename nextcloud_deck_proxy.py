@@ -842,8 +842,8 @@ class Handler(BaseHTTPRequestHandler):
         titre_ext=data.get('titre','')
         action=data.get('action','Créé')
         processed_mids.add(mid)
-        # Sauvegarder le titre AVANT de modifier prefill_data
-        titre_courant = titre_ext or (prefill_queue[0].get('titre','') if prefill_queue else '') or str(mid)
+        # titre_ext = titre saisi dans l'interface (priorité max)
+        titre_courant = titre_ext if titre_ext else (prefill_queue[0].get('titre','') if prefill_queue else str(mid))
         # Retirer le mail traité de la file
         if prefill_queue:
             prefill_queue.pop(0)
