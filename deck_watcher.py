@@ -121,7 +121,7 @@ def mail_to_pdf(subject, sender, date_str, body, attachments):
             f.write(html)
         return path
 
-def ask_claude(api_key, boards, subject, sender, body):
+def ask_claude(api_key, boards, subject, sender, date_str, body):
     boards_list = '\n'.join([f'- {b["title"]} (id:{b["id"]})' for b in boards])
     prompt = f"""Tu es un assistant qui aide à organiser des emails dans Nextcloud Deck.
 
@@ -144,7 +144,7 @@ Ta mission :
 1. Choisir le tableau le plus pertinent ou null si incertain
 2. Titre court (max 80 caractères)
 3. Description structurée si contenu substantiel :
-   - **Résumé** : 1-3 phrases
+   - **Résumé** : commence OBLIGATOIREMENT par la ligne "Objet : {subject} — {date_str}" puis 1-3 phrases sur l'essentiel
    - **Actions à suivre** : si actions concrètes demandées
    - **Synthèse** : si contenu riche, une phrase par ligne
 
@@ -264,7 +264,7 @@ def process_mail(cfg, mid_str, msg, processed):
     boards = get_boards(nc['url'], nc['user'], nc['password'])
 
     print("  Analyse Claude...", flush=True)
-    result = ask_claude(cfg['anthropic']['api_key'], boards, subject, sender, body)
+    result = ask_claude(cfg['anthropic']['api_key'], boards, subject, sender, date_str, body)
     print(f"  → Tableau : {result.get('boardTitle','')}", flush=True)
     print(f"  → Titre   : {result['titre']}", flush=True)
 
