@@ -496,9 +496,7 @@ async function excludeMail(){
 }
 
 async function loadNewMail(){
-  const banner = document.getElementById('new-mail-banner');
-  banner.style.display = 'none';
-  pollingActive = false; // Garder polling arrêté pendant le traitement
+  pollingActive = false;
   document.title = 'Nextcloud Deck';
   try {
     const data = await fetch('/get-prefill').then(r=>r.json());
