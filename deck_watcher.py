@@ -208,7 +208,7 @@ def fetch_deck_mails(cfg, processed):
             return []
 
         # Chercher mails depuis hier
-        since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
+        since = (datetime.now() - timedelta(hours=1)).strftime("%d-%b-%Y")
         _, data = mail.search(None, f'SINCE {since}')
         mail_ids = data[0].split()
         print(f"  {len(mail_ids)} mail(s) trouvés depuis hier", flush=True)
