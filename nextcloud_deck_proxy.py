@@ -161,7 +161,7 @@ HTML = r"""<!DOCTYPE html>
     <div class="f"><label class="lbl">Description</label><textarea id="desc" placeholder="Description (optionnel)..."></textarea></div>
     <div class="f" id="tags-field">
       <label class="lbl">Tag</label>
-      <div class="tags-wrap" id="tags-wrap"><span style="font-size:12px;color:var(--hint)">— sélectionner un tableau —</span></div>
+      <div class="tags-wrap" id="tags-wrap"></div>
     </div>
     <div class="g2">
       <div class="f" id="users-field">
