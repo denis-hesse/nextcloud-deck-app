@@ -486,12 +486,11 @@ let pollingActive = true;
 
 // Ajuster hauteur panneau log = hauteur exacte colonne gauche
 function adjustPanelHeight(){
-  const wrap = document.querySelector('.wrap');
   const panel = document.getElementById('history-panel');
-  if(wrap && panel){
-    const rect = wrap.getBoundingClientRect();
-    panel.style.height = rect.height + 'px';
-    panel.style.top = rect.top + 'px';
+  const actions = document.querySelector('.actions');
+  if(panel && actions){
+    const rect = actions.getBoundingClientRect();
+    panel.style.height = (rect.bottom + 16) + 'px';
   }
 }
 window.addEventListener('load', adjustPanelHeight);
