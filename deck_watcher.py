@@ -195,6 +195,8 @@ def send_prefill(app_url, port, data):
     urllib.request.urlopen(req, timeout=5)
     print(f"  Formulaire prêt.", flush=True)
 
+STARTUP_TIME = datetime.now()
+
 def fetch_deck_mails(cfg, processed):
     """Récupère les mails envoyés avec @deck non encore traités."""
     try:
@@ -208,7 +210,7 @@ def fetch_deck_mails(cfg, processed):
             return []
 
         # Chercher mails depuis hier
-        since = (datetime.now() - timedelta(hours=1)).strftime("%d-%b-%Y")
+        since = (datetime.now() - timedelta(hours=2)).strftime("%d-%b-%Y")
         _, data = mail.search(None, f'SINCE {since}')
         mail_ids = data[0].split()
         print(f"  {len(mail_ids)} mail(s) trouvés depuis hier", flush=True)
@@ -271,6 +273,7 @@ def process_mail(cfg, mid_str, msg, processed):
     print(f"  → PDF : {pdf_path}", flush=True)
 
     send_prefill(cfg.get('app_url',''), cfg['proxy_port'], {
+        'subject': subject,
         'boardId': result.get('boardId'),
         'titre': result['titre'],
         'description': result.get('description', ''),
