@@ -33,7 +33,7 @@ HTML = r"""<!DOCTYPE html>
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; min-height:100vh; }
   .app-layout { display:block; max-width:560px; }
   .wrap { padding:1.5rem 1rem; }
-  .history-panel { position:fixed; top:0; left:560px; width:336px; height:100vh; max-height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; min-width:200px; max-width:600px; }
+  .history-panel { position:fixed; top:0; left:560px; width:336px; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; min-width:200px; max-width:600px; }
   .history-list { flex:1; overflow-y:auto; overflow-x:hidden; padding:8px; min-height:0; }
   .resize-handle { position:absolute; left:0; top:0; width:4px; height:100%; cursor:ew-resize; background:transparent; z-index:101; }
   .resize-handle:hover { background:var(--blue); opacity:0.3; }
@@ -464,6 +464,18 @@ function resetForm(){
 // Vérification silencieuse d'un nouveau mail toutes les 15s (sans rafraîchir)
 let pollingActive = true;
 
+// Ajuster hauteur du panneau log à la hauteur du formulaire
+function adjustPanelHeight(){
+  const wrap = document.querySelector('.wrap');
+  const panel = document.getElementById('history-panel');
+  if(wrap && panel){
+    const h = wrap.scrollHeight;
+    panel.style.height = Math.min(h, window.innerHeight) + 'px';
+  }
+}
+window.addEventListener('resize', adjustPanelHeight);
+setInterval(adjustPanelHeight, 1000);
+
 // Poignée de redimensionnement du panneau historique
 (function(){
   const handle = document.getElementById('resize-handle');
@@ -564,6 +576,7 @@ async function loadHistory(){
 setInterval(loadHistory, 5000);
 
 window.addEventListener('DOMContentLoaded',async()=>{
+  adjustPanelHeight();
   loadHistory();
   // Charger la config serveur (variables d'environnement Railway)
   try {
