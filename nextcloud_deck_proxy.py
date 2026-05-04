@@ -158,10 +158,6 @@ HTML = r"""<!DOCTYPE html>
   <!-- Carte -->
   <div class="card">
     
-    <div class="f" id="mail-info-field" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;margin-bottom:12px;">
-      <label class="lbl" style="margin-bottom:4px;">Mail</label>
-      <div id="mail-info" style="font-size:13px;color:var(--text);">—</div>
-    </div>
     <div class="f"><label class="lbl">Titre</label><input type="text" id="title" placeholder="Titre de la carte..."/></div>
     <div class="f"><label class="lbl">Description</label><textarea id="desc" placeholder="Description (optionnel)..."></textarea></div>
     <div class="f" id="tags-field">
@@ -458,7 +454,6 @@ function resetForm(){
   document.getElementById('board').value='';
   document.getElementById('stack').innerHTML='<option value="">— sélectionner —</option>';
   document.getElementById('tags-field').style.display='none';
-  document.getElementById('mail-info').textContent = '—';
   document.getElementById('assignee').innerHTML='<option value="">— aucun —</option>';
   document.getElementById('tags-wrap').innerHTML='';
   selectedTagId=null;
@@ -506,11 +501,6 @@ async function loadNewMail(){
   document.title = 'Nextcloud Deck';
   try {
     const data = await fetch('/get-prefill').then(r=>r.json());
-    if(data.subject || data.mail_date){
-      const subj = data.subject || '';
-      const dt = data.mail_date || '';
-      document.getElementById('mail-info').textContent = subj + (dt ? ' — ' + dt : '');
-    }
     if(data.titre) document.getElementById('title').value = data.titre;
     if(data.description) document.getElementById('desc').value = data.description;
     if(data.pdf) prefillPdf(data.pdf);
@@ -573,12 +563,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       const check = await fetch('/has-prefill').then(r=>r.json());
       if(check.has){
         const data = await fetch('/get-prefill').then(r=>r.json());
-        if(data.subject || data.mail_date){
-      const subj = data.subject || '';
-      const dt = data.mail_date || '';
-      document.getElementById('mail-info').textContent = subj + (dt ? ' — ' + dt : '');
-    }
-    if(data.titre) document.getElementById('title').value = data.titre;
+        if(data.titre) document.getElementById('title').value = data.titre;
         if(data.description) document.getElementById('desc').value = data.description;
         if(data.pdf) prefillPdf(data.pdf);
         if(data.boardId){

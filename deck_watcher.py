@@ -142,18 +142,19 @@ RÈGLES STRICTES :
 
 Ta mission :
 1. Choisir le tableau le plus pertinent ou null si incertain
-2. Titre court (max 80 caractères)
-3. Description structurée si contenu substantiel :
-   - **Résumé** : 1-3 phrases sur l'essentiel du contenu
-   - **Actions à suivre** : si actions concrètes demandées
-   - **Synthèse** : si contenu riche, une phrase par ligne
+2. Titre court (max 80 caractères) — supprimer "Re:", "Fw:", "Fwd:" — ne pas répéter l'objet mot pour mot
+3. Description structurée :
+   - Première ligne TOUJOURS : "{subject} — {date_str}" (sans label, sans gras)
+   - **Résumé** : 1-3 phrases sur l'essentiel (si mail de test : "Mail de test." uniquement)
+   - **Actions à suivre** : uniquement si actions concrètes demandées
+   - **Synthèse** : uniquement si contenu riche, une phrase par ligne
 
 Réponds UNIQUEMENT en JSON :
 {{
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
-  "titre": "<titre>",
-  "description": "**Résumé**\n<résumé>\n\n**Actions à suivre**\n<si applicable>\n\n**Synthèse**\n<si applicable>"
+  "titre": "<titre sans Re:/Fw:/Fwd:>",
+  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé>\\n\\n**Actions à suivre**\\n<si applicable>\\n\\n**Synthèse**\\n<si applicable>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",
