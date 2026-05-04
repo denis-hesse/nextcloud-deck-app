@@ -139,9 +139,9 @@ HTML = r"""<!DOCTYPE html>
     </details>
   </div>
 
-  <!-- Localisation -->
+
   <div class="card">
-    <div class="sect">Localisation</div>
+    
     <div class="g2">
       <div class="f">
         <label class="lbl">Tableau (Board)</label>
@@ -157,7 +157,7 @@ HTML = r"""<!DOCTYPE html>
 
   <!-- Carte -->
   <div class="card">
-    <div class="sect">Carte</div>
+    
     <div class="f" id="mail-info-field" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;margin-bottom:12px;">
       <label class="lbl" style="margin-bottom:4px;">Mail</label>
       <div id="mail-info" style="font-size:13px;color:var(--text);">—</div>
@@ -179,7 +179,7 @@ HTML = r"""<!DOCTYPE html>
       <label class="lbl">Fichier joint</label>
       <label class="fzone" for="file">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 8l-6 6a4 4 0 01-5.66-5.66l6-6a2.5 2.5 0 013.54 3.54l-6.01 6a1 1 0 01-1.42-1.42l5.5-5.49" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        <span>Choisir un fichier</span>
+        <span>Ajouter un fichier</span>
         <input type="file" id="file" style="display:none" onchange="updateFile(this)"/>
       </label>
       <div class="fname" id="fname">Aucun fichier sélectionné</div>
