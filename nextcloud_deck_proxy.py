@@ -43,7 +43,7 @@ HTML = r"""<!DOCTYPE html>
   .history-empty { font-size:12px; color:var(--hint); text-align:center; padding:2rem 1rem; }
   .history-item { padding:8px 10px; border-radius:var(--rs); margin-bottom:4px; background:var(--surface2); border:1px solid var(--border); }
   .history-date { font-size:11px; color:var(--hint); font-family:'DM Mono',monospace; margin-bottom:2px; }
-  .history-titre { font-size:12px; color:var(--text); line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .history-titre { font-size:12px; color:var(--text); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .hdr { display:flex; align-items:center; gap:12px; margin-bottom:1.5rem; }
   .logo { width:38px; height:38px; background:var(--blue); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .hdr h1 { font-size:20px; font-weight:600; }
