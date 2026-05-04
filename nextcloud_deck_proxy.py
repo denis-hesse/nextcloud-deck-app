@@ -33,7 +33,7 @@ HTML = r"""<!DOCTYPE html>
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; min-height:100vh; }
   .app-layout { display:block; max-width:560px; }
   .wrap { padding:1.5rem 1rem; }
-  .history-panel { position:fixed; top:0; left:560px; width:280px; height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; }
+  .history-panel { position:fixed; top:0; left:560px; width:336px; height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; }
 
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
@@ -429,7 +429,7 @@ async function createCard(){
       const res = await fetch('/mark-processed',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({mid})
+        body:JSON.stringify({mid, action: 'Créé'})
       }).then(r=>r.json());
       if(res.next){
         // Mail suivant disponible — recharger la page
@@ -485,7 +485,7 @@ async function excludeMail(){
     await fetch('/mark-processed', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mid: mid, titre: pf.titre || 'Mail exclu'})
+      body:JSON.stringify({mid: mid, titre: pf.titre || 'Mail exclu', action: 'Exclu'})
     });
     st.className = 'status ok';
     st.textContent = 'Mail exclu.';
@@ -533,7 +533,7 @@ async function loadHistory(){
     }
     list.innerHTML = items.slice().reverse().map(item=>`
       <div class="history-item">
-        <div class="history-date">${item.date}</div>
+        <div class="history-date">${item.date} — <span style="color:${item.action==='Exclu'?'var(--err)':'var(--ok)'};">${item.action||'Créé'}</span></div>
         <div class="history-titre" title="${item.titre}">${item.titre}</div>
       </div>
     `).join('');
@@ -822,7 +822,8 @@ class Handler(BaseHTTPRequestHandler):
         from datetime import datetime as dt
         history_log.append({
             'date': dt.now().strftime('%d/%m/%Y %H:%M'),
-            'titre': titre or mid
+            'titre': titre or str(mid),
+            'action': action
         })
         print(f"  Mail {mid} marqué comme traité.")
         # Sauvegarder dans le fichier partagé avec le watcher
