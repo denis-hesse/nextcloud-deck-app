@@ -32,8 +32,9 @@ HTML = r"""<!DOCTYPE html>
   }
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; height:100vh; overflow:hidden; }
   .app-layout { display:flex; height:100vh; width:100%; }
-  .wrap { width:560px; min-width:560px; max-width:560px; padding:2rem 1rem; overflow-y:auto; height:100vh; flex-shrink:0; }
-  .history-panel { width:260px; min-width:260px; background:var(--surface); border-left:1px solid var(--border); height:100vh; display:flex; flex-direction:column; flex-shrink:0; }
+  .wrap { width:540px; min-width:400px; max-width:540px; padding:1.5rem 1rem; overflow-y:auto; height:100vh; flex-shrink:0; }
+  .history-panel { width:280px; min-width:220px; flex:1; background:var(--surface); border-left:1px solid var(--border); height:100vh; display:flex; flex-direction:column; }
+
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
   .history-list { flex:1; overflow-y:auto; padding:8px; }
@@ -157,6 +158,10 @@ HTML = r"""<!DOCTYPE html>
   <!-- Carte -->
   <div class="card">
     <div class="sect">Carte</div>
+    <div class="f" id="mail-info-field" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;margin-bottom:12px;">
+      <label class="lbl" style="margin-bottom:4px;">Mail</label>
+      <div id="mail-info" style="font-size:13px;color:var(--text);">—</div>
+    </div>
     <div class="f"><label class="lbl">Titre</label><input type="text" id="title" placeholder="Titre de la carte..."/></div>
     <div class="f"><label class="lbl">Description</label><textarea id="desc" placeholder="Description (optionnel)..."></textarea></div>
     <div class="f" id="tags-field">
@@ -453,6 +458,7 @@ function resetForm(){
   document.getElementById('board').value='';
   document.getElementById('stack').innerHTML='<option value="">— sélectionner —</option>';
   document.getElementById('tags-field').style.display='none';
+  document.getElementById('mail-info').textContent = '—';
   document.getElementById('assignee').innerHTML='<option value="">— aucun —</option>';
   document.getElementById('tags-wrap').innerHTML='';
   selectedTagId=null;
@@ -500,6 +506,11 @@ async function loadNewMail(){
   document.title = 'Nextcloud Deck';
   try {
     const data = await fetch('/get-prefill').then(r=>r.json());
+    if(data.subject || data.mail_date){
+      const subj = data.subject || '';
+      const dt = data.mail_date || '';
+      document.getElementById('mail-info').textContent = subj + (dt ? ' — ' + dt : '');
+    }
     if(data.titre) document.getElementById('title').value = data.titre;
     if(data.description) document.getElementById('desc').value = data.description;
     if(data.pdf) prefillPdf(data.pdf);
@@ -562,7 +573,12 @@ window.addEventListener('DOMContentLoaded',async()=>{
       const check = await fetch('/has-prefill').then(r=>r.json());
       if(check.has){
         const data = await fetch('/get-prefill').then(r=>r.json());
-        if(data.titre) document.getElementById('title').value = data.titre;
+        if(data.subject || data.mail_date){
+      const subj = data.subject || '';
+      const dt = data.mail_date || '';
+      document.getElementById('mail-info').textContent = subj + (dt ? ' — ' + dt : '');
+    }
+    if(data.titre) document.getElementById('title').value = data.titre;
         if(data.description) document.getElementById('desc').value = data.description;
         if(data.pdf) prefillPdf(data.pdf);
         if(data.boardId){

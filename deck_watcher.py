@@ -144,8 +144,7 @@ Ta mission :
 1. Choisir le tableau le plus pertinent ou null si incertain
 2. Titre court (max 80 caractères)
 3. Description structurée si contenu substantiel :
-   - Commence OBLIGATOIREMENT par la première ligne : "{subject} — {date_str}" (sans label, sans markdown)
-   - **Résumé** : 1-3 phrases sur l'essentiel
+   - **Résumé** : 1-3 phrases sur l'essentiel du contenu
    - **Actions à suivre** : si actions concrètes demandées
    - **Synthèse** : si contenu riche, une phrase par ligne
 
@@ -154,7 +153,7 @@ Réponds UNIQUEMENT en JSON :
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
   "titre": "<titre>",
-  "description": "{subject} — {date_str}\n\n**Résumé**\n<résumé>\n\n**Actions à suivre**\n<si applicable>\n\n**Synthèse**\n<si applicable>"
+  "description": "**Résumé**\n<résumé>\n\n**Actions à suivre**\n<si applicable>\n\n**Synthèse**\n<si applicable>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",
@@ -281,6 +280,7 @@ def process_mail(cfg, mid_str, msg, processed):
 
     send_prefill(cfg.get('app_url',''), cfg['proxy_port'], {
         'subject': subject,
+        'mail_date': date_str,
         'boardId': result.get('boardId'),
         'titre': result['titre'],
         'description': result.get('description', ''),
