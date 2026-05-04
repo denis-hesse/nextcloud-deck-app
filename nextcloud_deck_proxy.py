@@ -470,7 +470,7 @@ function adjustPanelHeight(){
   const panel = document.getElementById('history-panel');
   if(wrap && panel){
     const h = wrap.scrollHeight;
-    panel.style.height = Math.min(h, window.innerHeight) + 'px';
+    panel.style.height = Math.min(h, window.innerHeight) - 40 + 'px';
   }
 }
 window.addEventListener('resize', adjustPanelHeight);
