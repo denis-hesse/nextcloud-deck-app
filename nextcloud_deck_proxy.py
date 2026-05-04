@@ -33,7 +33,7 @@ HTML = r"""<!DOCTYPE html>
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; min-height:100vh; }
   .app-layout { display:block; max-width:560px; }
   .wrap { padding:1.5rem 1rem; }
-  .history-panel { position:fixed; top:0; left:560px; width:336px;  background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; min-width:200px; max-width:600px; }
+  .history-panel { position:fixed; top:0; left:560px; width:336px; height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; box-sizing:border-box; z-index:100; min-width:200px; max-width:600px; }
   .history-list { flex:1; overflow-y:auto; overflow-x:hidden; padding:8px; min-height:0; }
   .resize-handle { position:absolute; left:0; top:0; width:4px; height:100%; cursor:ew-resize; background:transparent; z-index:101; }
   .resize-handle:hover { background:var(--blue); opacity:0.3; }
