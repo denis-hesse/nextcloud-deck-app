@@ -31,9 +31,9 @@ HTML = r"""<!DOCTYPE html>
     --r: 10px; --rs: 6px;
   }
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; min-height:100vh; }
-  .app-layout { display:block; margin-right:300px; }
-  .wrap { padding:1.5rem 1rem; max-width:580px; }
-  .history-panel { position:fixed; top:0; right:0; width:300px; height:100vh; background:#e8f4fd; border-left:3px solid #0082C9; display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; }
+  .app-layout { display:flex; flex-direction:row; min-height:100vh; }
+  .wrap { padding:1.5rem 1rem; width:520px; min-width:520px; max-width:520px; flex-shrink:0; overflow-y:auto; }
+  .history-panel { width:280px; min-width:280px; max-width:280px; height:100vh; position:sticky; top:0; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; flex-shrink:0; }
 
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
@@ -818,7 +818,7 @@ class Handler(BaseHTTPRequestHandler):
             current_mid = ''
             print(f"  File d'attente vide.")
         # Ajouter à l'historique
-        titre = titre_ext or (prefill_data.get('titre','') if prefill_queue else data.get('titre',''))
+        titre = titre_ext or prefill_data.get('titre','') or data.get('titre', str(mid))
         from datetime import datetime as dt
         history_log.append({
             'date': dt.now().strftime('%d/%m/%Y %H:%M'),
