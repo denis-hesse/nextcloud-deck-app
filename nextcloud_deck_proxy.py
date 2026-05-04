@@ -33,7 +33,10 @@ HTML = r"""<!DOCTYPE html>
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; min-height:100vh; }
   .app-layout { display:block; max-width:560px; }
   .wrap { padding:1.5rem 1rem; }
-  .history-panel { position:fixed; top:0; left:560px; width:336px; height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; }
+  .history-panel { position:fixed; top:0; left:560px; width:336px; height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; resize:horizontal; min-width:200px; max-width:600px; }
+  .history-list { flex:1; overflow-y:auto; padding:8px; }
+  .resize-handle { position:absolute; left:0; top:0; width:4px; height:100%; cursor:ew-resize; background:transparent; z-index:101; }
+  .resize-handle:hover { background:var(--blue); opacity:0.3; }
 
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
@@ -462,6 +465,26 @@ function resetForm(){
 // Vérification silencieuse d'un nouveau mail toutes les 15s (sans rafraîchir)
 let pollingActive = true;
 
+// Poignée de redimensionnement du panneau historique
+(function(){
+  const handle = document.getElementById('resize-handle');
+  const panel = document.getElementById('history-panel');
+  if(!handle || !panel) return;
+  let startX, startW;
+  handle.addEventListener('mousedown', e=>{
+    startX = e.clientX;
+    startW = panel.offsetWidth;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', ()=> document.removeEventListener('mousemove', onMove));
+    e.preventDefault();
+  });
+  function onMove(e){
+    const diff = startX - e.clientX;
+    const newW = Math.min(600, Math.max(200, startW + diff));
+    panel.style.width = newW + 'px';
+  }
+})();
+
 async function checkNewMail(){
   if(!pollingActive) return;
   try {
@@ -600,7 +623,7 @@ async function prefillPdf(pdfPath){
 </script>
 </div>
 <!-- Panneau historique -->
-<div class="history-panel">
+<div class="history-panel" id="history-panel"><div class="resize-handle" id="resize-handle"></div>
   <div class="history-header">
     <span>Historique</span>
     <span class="history-count" id="history-count">0</span>
