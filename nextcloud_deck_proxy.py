@@ -804,11 +804,14 @@ class Handler(BaseHTTPRequestHandler):
         data=json.loads(self.rfile.read(length))
         mid=data.get('mid','')
         titre_ext=data.get('titre','')
+        action=data.get('action','Créé')
         processed_mids.add(mid)
+        # Sauvegarder le titre AVANT de modifier prefill_data
+        titre_courant = titre_ext or (prefill_queue[0].get('titre','') if prefill_queue else '') or str(mid)
         # Retirer le mail traité de la file
         if prefill_queue:
             prefill_queue.pop(0)
-        # Charger le suivant ou garder le dernier affiché
+        # Charger le suivant ou vider
         if prefill_queue:
             prefill_data = prefill_queue[0]
             current_mid = str(prefill_data.get('mail_mid',''))
@@ -818,14 +821,13 @@ class Handler(BaseHTTPRequestHandler):
             current_mid = ''
             print(f"  File d'attente vide.")
         # Ajouter à l'historique
-        titre = titre_ext or prefill_data.get('titre','') or data.get('titre', str(mid))
         from datetime import datetime as dt
         history_log.append({
             'date': dt.now().strftime('%d/%m/%Y %H:%M'),
-            'titre': titre or str(mid),
+            'titre': titre_courant,
             'action': action
         })
-        print(f"  Mail {mid} marqué comme traité.")
+        print(f"  Mail {mid} marqué comme traité ({action}).")
         # Sauvegarder dans le fichier partagé avec le watcher
         try:
             existing = []
