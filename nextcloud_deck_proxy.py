@@ -509,10 +509,10 @@ async function checkNewMail(){
 setInterval(checkNewMail, 5000);
 
 async function excludeMail(){
-  // Vérifier qu'un mail est en cours de traitement
+  // Exclure uniquement si un mail a été détecté automatiquement
   const pf = await fetch('/get-prefill').then(r=>r.json()).catch(()=>({}));
-  if(!pf.mail_mid){
-    return; // Pas de mail en cours, on ne fait rien
+  if(!pf.mail_mid || !pf.titre){
+    return; // Pas de mail détecté automatiquement
   }
   const st = document.getElementById('status');
   st.className = 'status loading';
