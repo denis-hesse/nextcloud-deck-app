@@ -144,7 +144,8 @@ Ta mission :
 1. Choisir le tableau le plus pertinent ou null si incertain
 2. Titre court (max 80 caractères)
 3. Description structurée si contenu substantiel :
-   - **Résumé** : commence OBLIGATOIREMENT par la ligne "Objet : {subject} — {date_str}" puis 1-3 phrases sur l'essentiel
+   - Commence OBLIGATOIREMENT par la première ligne : "{subject} — {date_str}" (sans label, sans markdown)
+   - **Résumé** : 1-3 phrases sur l'essentiel
    - **Actions à suivre** : si actions concrètes demandées
    - **Synthèse** : si contenu riche, une phrase par ligne
 
@@ -153,7 +154,7 @@ Réponds UNIQUEMENT en JSON :
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
   "titre": "<titre>",
-  "description": "<description>"
+  "description": "{subject} — {date_str}\n\n**Résumé**\n<résumé>\n\n**Actions à suivre**\n<si applicable>\n\n**Synthèse**\n<si applicable>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",
@@ -249,7 +250,13 @@ def fetch_deck_mails(cfg, processed):
 def process_mail(cfg, mid_str, msg, processed):
     subject = decode_header(msg.get('Subject', '(sans objet)'))
     sender = decode_header(msg.get('From', ''))
-    date_str = msg.get('Date', '')
+    date_str_raw = msg.get('Date', '')
+    try:
+        from email.utils import parsedate_to_datetime
+        dt = parsedate_to_datetime(date_str_raw)
+        date_str = dt.strftime('%d/%m/%Y %H:%M')
+    except:
+        date_str = date_str_raw
     body = get_body(msg)
     attachments = get_attachments(msg)
 
