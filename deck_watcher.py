@@ -213,7 +213,6 @@ def fetch_deck_mails(cfg, processed):
         mail_ids = data[0].split()
         print(f"  {len(mail_ids)} mail(s) trouvés depuis hier", flush=True)
 
-        cutoff = datetime.now() - timedelta(minutes=30)
         new_mails = []
 
         for mid in mail_ids:
@@ -227,20 +226,6 @@ def fetch_deck_mails(cfg, processed):
             _, msg_data = mail.fetch(mid, '(RFC822)')
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
-
-            # Vérifier la date (30 dernières minutes)
-            try:
-                from email.utils import parsedate_to_datetime
-                msg_date = parsedate_to_datetime(msg.get('Date', ''))
-                if msg_date.tzinfo:
-                    from datetime import timezone
-                    msg_date = msg_date.astimezone(timezone.utc).replace(tzinfo=None)
-                if msg_date < cutoff:
-                    processed.add(mid_str)
-                    save_processed(processed)
-                    continue
-            except Exception:
-                pass
 
             # Vérifier @deck dans corps ou sujet
             body = get_body(msg)
