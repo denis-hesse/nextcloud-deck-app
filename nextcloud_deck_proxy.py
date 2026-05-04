@@ -464,18 +464,6 @@ function resetForm(){
 // Vérification silencieuse d'un nouveau mail toutes les 15s (sans rafraîchir)
 let pollingActive = true;
 
-// Ajuster hauteur du panneau log à la hauteur du formulaire
-function adjustPanelHeight(){
-  const wrap = document.querySelector('.wrap');
-  const panel = document.getElementById('history-panel');
-  if(wrap && panel){
-    const h = wrap.offsetHeight;
-    panel.style.height = h + 'px';
-  }
-}
-window.addEventListener('resize', adjustPanelHeight);
-setInterval(adjustPanelHeight, 1000);
-
 // Poignée de redimensionnement du panneau historique
 (function(){
   const handle = document.getElementById('resize-handle');
@@ -577,7 +565,6 @@ async function loadHistory(){
 setInterval(loadHistory, 5000);
 
 window.addEventListener('DOMContentLoaded',async()=>{
-  adjustPanelHeight();
   loadHistory();
   // Charger la config serveur (variables d'environnement Railway)
   try {
