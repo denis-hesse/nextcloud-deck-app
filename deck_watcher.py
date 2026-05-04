@@ -227,21 +227,6 @@ def fetch_deck_mails(cfg, processed):
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
 
-            # Vérifier la date (10 dernières secondes pour éviter doublons au démarrage)
-            try:
-                from email.utils import parsedate_to_datetime
-                from datetime import timezone
-                cutoff = datetime.now() - timedelta(minutes=2)
-                msg_date = parsedate_to_datetime(msg.get('Date', ''))
-                if msg_date.tzinfo:
-                    msg_date = msg_date.astimezone(timezone.utc).replace(tzinfo=None)
-                if msg_date < cutoff:
-                    processed.add(mid_str)
-                    save_processed(processed)
-                    continue
-            except Exception:
-                pass
-
             # Vérifier @deck dans corps ou sujet
             body = get_body(msg)
             subject = decode_header(msg.get('Subject', ''))
