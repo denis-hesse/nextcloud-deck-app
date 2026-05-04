@@ -509,11 +509,15 @@ async function checkNewMail(){
 setInterval(checkNewMail, 5000);
 
 async function excludeMail(){
+  // Vérifier qu'un mail est en cours de traitement
+  const pf = await fetch('/get-prefill').then(r=>r.json()).catch(()=>({}));
+  if(!pf.mail_mid){
+    return; // Pas de mail en cours, on ne fait rien
+  }
   const st = document.getElementById('status');
   st.className = 'status loading';
   st.innerHTML = '<span class="spin"></span>Exclusion...';
   try {
-    const pf = await fetch('/get-prefill').then(r=>r.json());
     const mid = pf.mail_mid || '';
     const titreInterface = document.getElementById('title').value.trim() || pf.titre || 'Mail exclu';
     await fetch('/mark-processed', {
