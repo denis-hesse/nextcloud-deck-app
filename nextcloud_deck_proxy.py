@@ -516,10 +516,11 @@ async function excludeMail(){
   try {
     const pf = await fetch('/get-prefill').then(r=>r.json());
     const mid = pf.mail_mid || '';
+    const titreInterface = document.getElementById('title').value.trim() || pf.titre || 'Mail exclu';
     await fetch('/mark-processed', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mid: mid, titre: pf.titre || 'Mail exclu', action: 'Exclu'})
+      body:JSON.stringify({mid: mid, titre: titreInterface, action: 'Exclu'})
     });
     st.className = 'status ok';
     st.textContent = 'Mail exclu.';
