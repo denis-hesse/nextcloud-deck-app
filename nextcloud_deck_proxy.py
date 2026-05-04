@@ -31,9 +31,9 @@ HTML = r"""<!DOCTYPE html>
     --r: 10px; --rs: 6px;
   }
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; height:100vh; overflow:hidden; }
-  .app-layout { display:flex; height:100vh; width:100%; }
-  .wrap { width:540px; min-width:400px; max-width:540px; padding:1.5rem 1rem; overflow-y:auto; height:100vh; flex-shrink:0; }
-  .history-panel { width:280px; min-width:220px; flex:1; background:var(--surface); border-left:1px solid var(--border); height:100vh; display:flex; flex-direction:column; }
+  .app-layout { display:flex; flex-direction:row; height:100vh; width:100vw; overflow:hidden; }
+  .wrap { width:520px; min-width:380px; max-width:520px; padding:1.5rem 1rem; overflow-y:auto; height:100vh; flex-shrink:0; box-sizing:border-box; }
+  .history-panel { flex:1; min-width:200px; background:var(--surface); border-left:2px solid var(--blue); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
@@ -161,7 +161,7 @@ HTML = r"""<!DOCTYPE html>
     <div class="f"><label class="lbl">Titre</label><input type="text" id="title" placeholder="Titre de la carte..."/></div>
     <div class="f"><label class="lbl">Description</label><textarea id="desc" placeholder="Description (optionnel)..."></textarea></div>
     <div class="f" id="tags-field">
-      <label class="lbl">Tag</label>
+      
       <div class="tags-wrap" id="tags-wrap"></div>
     </div>
     <div class="g2">
