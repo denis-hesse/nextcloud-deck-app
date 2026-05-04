@@ -97,10 +97,7 @@ HTML = r"""<!DOCTYPE html>
 <body>
 <div class="app-layout">
 <div class="wrap">
-  <div id="new-mail-banner" style="display:none; background:#0082C9; color:white; padding:10px 14px; border-radius:var(--rs); margin-bottom:1rem; align-items:center; justify-content:space-between; gap:10px;">
-    <span>📧 Nouveau mail détecté !</span>
-    <button onclick="loadNewMail()" style="font-family:var(--font-sans); font-size:13px; font-weight:600; padding:6px 14px; border:none; background:white; color:#0082C9; border-radius:var(--rs); cursor:pointer;">Voir le mail</button>
-  </div>
+
   <div class="hdr">
     <div class="logo">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
@@ -257,7 +254,7 @@ async function loadBoards(){
       o.dataset.users=JSON.stringify(b.users||[]);
       sel.appendChild(o);
     });
-    st.textContent=boards.length+' tableau(x) disponible(s).';
+    st.textContent='';
     document.getElementById('conn-details').removeAttribute('open');
   }catch(e){st.textContent='Erreur : '+e.message;}
 }
@@ -289,10 +286,10 @@ async function loadStacks(){
     // Sélectionner automatiquement si une seule liste, sinon Béatrice par défaut
     if(stacks.length===1){
       sel.selectedIndex=1;
-      document.getElementById('bstatus').textContent='Liste "'+stacks[0].title+'" sélectionnée (unique).';
+      document.getElementById('bstatus').textContent='';
     } else if(beatriceIdx>0){
       sel.selectedIndex=beatriceIdx;
-      document.getElementById('bstatus').textContent='Liste "'+sel.options[beatriceIdx].text+'" sélectionnée par défaut.';
+      document.getElementById('bstatus').textContent='';
     }
   }catch(e){}
 }
@@ -468,13 +465,10 @@ async function checkNewMail(){
   if(!pollingActive) return;
   try {
     const r = await fetch('/has-prefill').then(res=>res.json());
-    const banner = document.getElementById('new-mail-banner');
     if(r.has){
       document.title = '📧 Nouveau mail — Nextcloud Deck';
-      banner.style.display = 'flex';
-      pollingActive = false; // Arrêter le polling jusqu'à fin de traitement
-    } else {
-      banner.style.display = 'none';
+      pollingActive = false;
+      await loadNewMail();
     }
   } catch(e){}
 }
@@ -483,20 +477,18 @@ setInterval(checkNewMail, 5000);
 async function excludeMail(){
   const st = document.getElementById('status');
   st.className = 'status loading';
-  st.innerHTML = '<span class="spin"></span>Exclusion du mail...';
+  st.innerHTML = '<span class="spin"></span>Exclusion...';
   try {
     const pf = await fetch('/get-prefill').then(r=>r.json());
     const mid = pf.mail_mid || '';
-    if(mid){
-      await fetch('/mark-processed', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({mid})
-      });
-    }
+    await fetch('/mark-processed', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mid: mid, titre: pf.titre || 'Mail exclu'})
+    });
     st.className = 'status ok';
-    st.textContent = 'Mail exclu — aucune carte créée.';
-    setTimeout(()=>{ resetForm(); st.className='status'; pollingActive = true; }, 2000);
+    st.textContent = 'Mail exclu.';
+    setTimeout(()=>{ resetForm(); st.className='status'; pollingActive = true; }, 1500);
   } catch(e){
     st.className = 'status err';
     st.textContent = 'Erreur : ' + e.message;
@@ -808,8 +800,8 @@ class Handler(BaseHTTPRequestHandler):
         length=int(self.headers.get('Content-Length',0))
         data=json.loads(self.rfile.read(length))
         mid=data.get('mid','')
+        titre_ext=data.get('titre','')
         processed_mids.add(mid)
-        print(f"  mark-processed mid='{mid}' type={type(mid).__name__}", flush=True)
         # Retirer le mail traité de la file
         if prefill_queue:
             prefill_queue.pop(0)
@@ -821,7 +813,7 @@ class Handler(BaseHTTPRequestHandler):
             prefill_data = {}
             print(f"  File d'attente vide.")
         # Ajouter à l'historique
-        titre = prefill_data.get('titre','') if prefill_queue else data.get('titre','')
+        titre = titre_ext or (prefill_data.get('titre','') if prefill_queue else data.get('titre',''))
         from datetime import datetime as dt
         history_log.append({
             'date': dt.now().strftime('%d/%m/%Y %H:%M'),
