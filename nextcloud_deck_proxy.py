@@ -30,10 +30,10 @@ HTML = r"""<!DOCTYPE html>
     --info: #1d4ed8; --info-bg: #eff6ff; --info-b: #bfdbfe;
     --r: 10px; --rs: 6px;
   }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; height:100vh; overflow:hidden; }
-  .app-layout { display:flex; flex-direction:row; height:100vh; width:100vw; overflow:hidden; }
-  .wrap { width:520px; max-width:520px; min-width:520px; padding:1.5rem 1rem; overflow-y:auto; height:100vh; flex-shrink:0; flex-grow:0; box-sizing:border-box; }
-  .history-panel { width:300px; max-width:300px; min-width:300px; background:#e8f4fd; border-left:3px solid #0082C9; height:100vh; display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; flex-shrink:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; min-height:100vh; }
+  .app-layout { display:block; margin-right:300px; }
+  .wrap { padding:1.5rem 1rem; max-width:580px; }
+  .history-panel { position:fixed; top:0; right:0; width:300px; height:100vh; background:#e8f4fd; border-left:3px solid #0082C9; display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; }
 
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
