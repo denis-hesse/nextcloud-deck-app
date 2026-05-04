@@ -469,8 +469,8 @@ function adjustPanelHeight(){
   const wrap = document.querySelector('.wrap');
   const panel = document.getElementById('history-panel');
   if(wrap && panel){
-    const h = wrap.scrollHeight;
-    panel.style.height = Math.min(h, window.innerHeight) - 40 + 'px';
+    const h = wrap.offsetHeight;
+    panel.style.height = h + 'px';
   }
 }
 window.addEventListener('resize', adjustPanelHeight);
