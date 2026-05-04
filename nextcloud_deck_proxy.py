@@ -33,14 +33,13 @@ HTML = r"""<!DOCTYPE html>
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; min-height:100vh; }
   .app-layout { display:block; max-width:560px; }
   .wrap { padding:1.5rem 1rem; }
-  .history-panel { position:fixed; top:0; left:560px; width:336px; height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; resize:horizontal; min-width:200px; max-width:600px; }
-  .history-list { flex:1; overflow-y:auto; padding:8px; }
+  .history-panel { position:fixed; top:0; left:560px; width:336px; height:100vh; max-height:100vh; background:var(--surface); border-left:2px solid var(--blue); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box; z-index:100; min-width:200px; max-width:600px; }
+  .history-list { flex:1; overflow-y:auto; overflow-x:hidden; padding:8px; min-height:0; }
   .resize-handle { position:absolute; left:0; top:0; width:4px; height:100%; cursor:ew-resize; background:transparent; z-index:101; }
   .resize-handle:hover { background:var(--blue); opacity:0.3; }
 
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
-  .history-list { flex:1; overflow-y:auto; padding:8px; }
   .history-empty { font-size:12px; color:var(--hint); text-align:center; padding:2rem 1rem; }
   .history-item { padding:8px 10px; border-radius:var(--rs); margin-bottom:4px; background:var(--surface2); border:1px solid var(--border); }
   .history-date { font-size:11px; color:var(--hint); font-family:'DM Mono',monospace; margin-bottom:2px; }
