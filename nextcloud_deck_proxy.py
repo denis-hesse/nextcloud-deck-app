@@ -32,7 +32,7 @@ HTML = r"""<!DOCTYPE html>
   }
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); margin:0; height:100vh; overflow:hidden; }
   .app-layout { display:flex; height:100vh; width:100%; }
-  .wrap { flex:1; padding:2rem 1rem; overflow-y:auto; height:100vh; min-width:0; }
+  .wrap { width:560px; min-width:560px; max-width:560px; padding:2rem 1rem; overflow-y:auto; height:100vh; flex-shrink:0; }
   .history-panel { width:260px; min-width:260px; background:var(--surface); border-left:1px solid var(--border); height:100vh; display:flex; flex-direction:column; flex-shrink:0; }
   .history-header { display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .history-count { background:#0082C9; color:white; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:600; }
@@ -49,7 +49,7 @@ HTML = r"""<!DOCTYPE html>
   .sect { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:1rem; }
   .sect-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
   .sect-row .sect { margin-bottom:0; }
-  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
   .g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
   .f { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
   .f:last-child { margin-bottom:0; }
