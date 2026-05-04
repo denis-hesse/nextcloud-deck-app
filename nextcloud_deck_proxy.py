@@ -840,6 +840,7 @@ class Handler(BaseHTTPRequestHandler):
         mid=data.get('mid','')
         titre_ext=data.get('titre','')
         action=data.get('action','Créé')
+        print(f"  mark-processed: mid={mid} titre_ext='{titre_ext}' action={action}", flush=True)
         processed_mids.add(mid)
         # titre_ext = titre saisi dans l'interface (priorité max)
         titre_courant = titre_ext if titre_ext else (prefill_queue[0].get('titre','') if prefill_queue else str(mid))
