@@ -144,7 +144,7 @@ HTML = r"""<!DOCTYPE html>
     <div class="g2">
       <div class="f">
         <label class="lbl">Tableau (Board)</label>
-        <select id="board" onchange="onBoardChange()"><option value="">— chargement... —</option></select>
+        <select id="board" onchange="onBoardChange()"><option value="">— sélectionner —</option></select>
       </div>
       <div class="f">
         <label class="lbl">Liste (Stack)</label>
@@ -238,7 +238,7 @@ async function saveAndConnect(){
 async function loadBoards(){
   const{user,pass}=creds();
   const st=document.getElementById('bstatus');
-  st.textContent='Chargement des tableaux...';
+  st.textContent='';
   try{
     const r=await fetch(purl(ncurl()+'/index.php/apps/deck/api/v1.0/boards?details=true'),{headers:hdrs(user,pass)});
     if(!r.ok)throw new Error('HTTP '+r.status);
