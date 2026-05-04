@@ -617,6 +617,7 @@ async function prefillPdf(pdfPath){
 
 # Stockage en mémoire des données pré-remplies
 prefill_data = {}
+current_mid = ''  # Mid du mail en cours de traitement
 prefill_queue = []  # File d'attente des mails à traiter
 processed_mids = set()  # Mails traités partagés entre proxy et watcher
 history_log = []  # Historique des mails traités
@@ -709,8 +710,11 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(b)
 
     def _get_prefill(self):
-        global prefill_data
-        b = json.dumps(prefill_data).encode()
+        global prefill_data, current_mid
+        data = dict(prefill_data)
+        if 'mail_mid' not in data and current_mid:
+            data['mail_mid'] = current_mid
+        b = json.dumps(data).encode()
         self.send_response(200)
         self.send_cors()
         self.send_header('Content-Type','application/json')
@@ -808,9 +812,11 @@ class Handler(BaseHTTPRequestHandler):
         # Charger le suivant ou garder le dernier affiché
         if prefill_queue:
             prefill_data = prefill_queue[0]
+            current_mid = str(prefill_data.get('mail_mid',''))
             print(f"  Mail suivant chargé : {prefill_data.get('titre','')[:50]}")
         else:
             prefill_data = {}
+            current_mid = ''
             print(f"  File d'attente vide.")
         # Ajouter à l'historique
         titre = titre_ext or (prefill_data.get('titre','') if prefill_queue else data.get('titre',''))
@@ -880,10 +886,12 @@ class Handler(BaseHTTPRequestHandler):
         data = json.loads(self.rfile.read(length))
         print(f"  Prefill reçu : {data.get('titre','')[:50]}")
         data['_processed'] = False
+        global current_mid
         prefill_queue.append(data)
         # Si c'est le premier mail, le charger immédiatement
         if len(prefill_queue) == 1:
             prefill_data = data
+            current_mid = str(data.get('mail_mid',''))
         print(f"  File d'attente : {len(prefill_queue)} mail(s)")
         b = b'OK'
         self.send_response(200)
