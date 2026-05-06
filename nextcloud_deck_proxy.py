@@ -196,7 +196,7 @@ HTML = r"""<!DOCTYPE html>
 <script>
 const PROXY='/proxy';
 const LS_USER='nd_user', LS_PASS='nd_pass';
-let selectedTagId = null;
+let selectedTagIds = [];
 let availableTags = [];
 
 function purl(t){return PROXY+'?url='+encodeURIComponent(t);}
@@ -332,7 +332,7 @@ function renderTags(){
   const wrap=document.getElementById('tags-wrap');
   const field=document.getElementById('tags-field');
   wrap.innerHTML='';
-  selectedTagId=null;
+  selectedTagIds=[];
 
   if(!availableTags||availableTags.length===0){
     wrap.innerHTML='<span style="font-size:12px;color:var(--hint)">Aucun tag dans ce tableau</span>';
@@ -351,21 +351,20 @@ function renderTags(){
     div.style.background=color+'22';
     div.style.color=color;
     div.innerHTML='<span class="tag-dot" style="background:'+color+'"></span>'+tag.title;
-    div.onclick=()=>selectTag(tag.id);
+    div.onclick=()=>toggleTag(tag.id);
     wrap.appendChild(div);
     if(defaultTag&&tag.id===defaultTag.id){
-      selectTag(tag.id);
+      toggleTag(tag.id);
     }
   });
-
-  // Si pas de "En cours", afficher sans sélection
-  if(!defaultTag)selectedTagId=null;
 }
 
-function selectTag(id){
-  selectedTagId=id;
+function toggleTag(id){
+  const idx=selectedTagIds.indexOf(id);
+  if(idx>=0){ selectedTagIds.splice(idx,1); }
+  else { selectedTagIds.push(id); }
   document.querySelectorAll('.tag').forEach(el=>{
-    el.classList.toggle('selected',el.dataset.id==id);
+    el.classList.toggle('selected', selectedTagIds.includes(el.dataset.id));
   });
 }
 
@@ -466,7 +465,7 @@ function resetForm(){
   document.getElementById('tags-field').style.display='none';
   document.getElementById('assignee').innerHTML='<option value="">— aucun —</option>';
   document.getElementById('tags-wrap').innerHTML='';
-  selectedTagId=null;
+  selectedTagIds=[];
 }
 
 // Vérification silencieuse d'un nouveau mail toutes les 15s (sans rafraîchir)

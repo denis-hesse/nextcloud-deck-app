@@ -169,14 +169,14 @@ Ta mission :
    - Première ligne TOUJOURS : "{subject} — {date_str}" (sans label, sans gras)
    - **Résumé** : synthèse unique du contenu, maximum 600 caractères (souvent moins si peu d'informations). Si mail de test : "Mail de test." uniquement.
    - **Actions à suivre** : toujours présent. Si actions identifiées : liste avec bullet points (• action). Sinon : "Pas d'action identifiée."
-   - **Mail avec historique** : coller ici le texte intégral du mail (corps complet)
+   - **Texte intégral du mail joint en pdf** : coller ici le texte intégral du mail (corps complet)
 
 Réponds UNIQUEMENT en JSON :
 {{
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
   "titre": "<titre sans Re:/Fw:/Fwd:>",
-  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n<actions ou Pas d'action identifiée.>\\n\\n**Mail avec historique**\\n<texte intégral>"
+  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n<actions ou Pas d'action identifiée.>\\n\\n**Texte intégral du mail joint en pdf**\\n<texte intégral>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",
