@@ -94,7 +94,12 @@ def get_body(msg):
             elif ct == 'text/html' and not body and 'attachment' not in cd:
                 charset = part.get_content_charset() or 'utf-8'
                 html = part.get_payload(decode=True).decode(charset, errors='replace')
-                body += re.sub(r'<[^>]+>', ' ', html)
+                # Supprimer balises de mise en forme avant conversion
+                html = re.sub(r'<(strong|b|em|i|u|h[1-6])[^>]*>(.*?)</\1>', r'\2', html, flags=re.DOTALL|re.IGNORECASE)
+                html = re.sub(r'<br\s*/?>', '\n', html, flags=re.IGNORECASE)
+                html = re.sub(r'<p[^>]*>', '\n', html, flags=re.IGNORECASE)
+                html = re.sub(r'<[^>]+>', ' ', html)
+                body += html
     else:
         charset = msg.get_content_charset() or 'utf-8'
         body = msg.get_payload(decode=True).decode(charset, errors='replace')
@@ -348,7 +353,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
         'mail_label': cfg['gmail']['label'],
-        'full_body': last_body
+        'full_body': clean_body
     })
 
 def main():
