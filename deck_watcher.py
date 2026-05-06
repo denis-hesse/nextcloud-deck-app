@@ -325,10 +325,15 @@ def process_mail(cfg, mid_str, msg, processed):
     # Nettoyer le texte intégral pour éviter les artefacts Markdown
     import re as _re
     clean_body = full_body
-    clean_body = _re.sub(r'^#{1,6}\s*', '', clean_body, flags=_re.MULTILINE)  # Supprimer ## titres
-    clean_body = _re.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', clean_body)  # Supprimer **gras**
-    clean_body = _re.sub(r'\\\*', '*', clean_body)  # Décoder \*
-    clean_body = _re.sub(r'\\-', '-', clean_body)  # Décoder \-
+    clean_body = _re.sub(r'^#{1,6}\s*', '', clean_body, flags=_re.MULTILINE)
+    clean_body = _re.sub(r'\*{1,3}([^*]*)\*{1,3}', r'\1', clean_body)
+    clean_body = _re.sub(r'https?://\S+', '', clean_body)
+    clean_body = _re.sub(r'\\[*\-]', '', clean_body)
+    # Supprimer les lignes trop longues (signatures, URLs résiduelles)
+    lines = clean_body.split('\n')
+    clean_body = '\n'.join(l for l in lines if len(l.strip()) < 200)
+    # Supprimer les lignes vides multiples
+    clean_body = _re.sub(r'\n{3,}', '\n\n', clean_body).strip()
 
     send_prefill(cfg.get('app_url',''), cfg['proxy_port'], {
         'subject': subject,
