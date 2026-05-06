@@ -64,7 +64,7 @@ HTML = r"""<!DOCTYPE html>
   .fzone { display:flex; align-items:center; gap:10px; padding:9px 12px; border:1.5px dashed var(--border); border-radius:var(--rs); cursor:pointer; background:var(--surface2); transition:border-color .15s,background .15s; }
   .fzone:hover { border-color:var(--blue); background:#f0f7fd; }
   .fzone span { font-size:13px; color:var(--muted); }
-  .fname { font-size:12px; color:var(--hint); margin-top:4px; font-family:'DM Mono',monospace; }
+  .fname { font-size:12px; color:var(--hint); margin-top:4px; font-family:'DM Mono',monospace; white-space:pre-line; }
   .row { display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
   .dot { width:8px; height:8px; border-radius:50%; background:#d1d5db; flex-shrink:0; transition:background .2s; }
   .dot.ok { background:#22c55e; } .dot.ko { background:#ef4444; }
@@ -657,7 +657,7 @@ async function prefillPdf(pdfPath){
     }
 
     document.getElementById('file').files = dt.files;
-    document.getElementById('fname').textContent = names.join(', ');
+    document.getElementById('fname').textContent = names.join('\n');
   } catch(e) { console.log('PDF prefill:', e); }
 }
 </script>

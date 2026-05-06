@@ -125,7 +125,7 @@ def mail_to_pdf(subject, sender, date_str, body, attachments):
                 config = pdfkit.configuration(wkhtmltopdf=p)
                 break
         safe = re.sub(r'[^\w\s-]', '', subject)[:40].strip().replace(' ', '_')
-        path = os.path.join(tempfile.gettempdir(), f'mail_{safe}.pdf')
+        path = os.path.join(tempfile.gettempdir(), f'_mail_{safe}.pdf')
         opts = {'encoding': 'UTF-8', 'quiet': ''}
         if config:
             pdfkit.from_string(html, path, configuration=config, options=opts)
@@ -135,20 +135,23 @@ def mail_to_pdf(subject, sender, date_str, body, attachments):
     except Exception as e:
         print(f"  (PDF indisponible : {e})", flush=True)
         safe = re.sub(r'[^\w\s-]', '', subject)[:40].strip().replace(' ', '_')
-        path = os.path.join(tempfile.gettempdir(), f'mail_{safe}.html')
+        path = os.path.join(tempfile.gettempdir(), f'_mail_{safe}.html')
         with open(path, 'w', encoding='utf-8') as f:
             f.write(html)
         return path
 
-def ask_claude(api_key, boards, subject, sender, date_str, body):
+def ask_claude(api_key, boards, subject, sender, date_str, body, full_body=None):
     boards_list = '\n'.join([f'- {b["title"]} (id:{b["id"]})' for b in boards])
     prompt = f"""Tu es un assistant qui aide à organiser des emails dans Nextcloud Deck.
 
 Email reçu :
 De : {sender}
 Objet : {subject}
-Corps :
-{body[:4000]}
+Dernier message (pour analyse) :
+{last_body[:2000]}
+
+Texte intégral (pour paragraphe Mail avec historique) :
+{full_body[:3000]}
 
 Tableaux disponibles :
 {boards_list}
@@ -165,18 +168,19 @@ Ta mission :
 3. Description structurée :
    - Première ligne TOUJOURS : "{subject} — {date_str}" (sans label, sans gras)
    - **Résumé** : synthèse unique du contenu, maximum 600 caractères (souvent moins si peu d'informations). Si mail de test : "Mail de test." uniquement.
-   - **Actions à suivre** : uniquement si actions concrètes demandées, en liste avec bullet points (• action)
+   - **Actions à suivre** : toujours présent. Si actions identifiées : liste avec bullet points (• action). Sinon : "Pas d'action identifiée."
+   - **Mail avec historique** : coller ici le texte intégral du mail (corps complet)
 
 Réponds UNIQUEMENT en JSON :
 {{
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
   "titre": "<titre sans Re:/Fw:/Fwd:>",
-  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n• <action1>\\n• <action2>"
+  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n<actions ou Pas d'action identifiée.>\\n\\n**Mail avec historique**\\n<texte intégral>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",
-        "max_tokens": 1500,
+        "max_tokens": 4000,
         "messages": [{"role": "user", "content": prompt}]
     }).encode()
     req = urllib.request.Request(
@@ -276,7 +280,8 @@ def process_mail(cfg, mid_str, msg, processed):
         date_str = dt.strftime('%d/%m/%Y %H:%M')
     except:
         date_str = date_str_raw
-    body = get_last_message_body(get_body(msg))
+    last_body = get_last_message_body(get_body(msg))
+    full_body = get_body(msg)
     attachments = get_attachments(msg)
 
     print(f"  📧 {subject}", flush=True)
@@ -290,7 +295,7 @@ def process_mail(cfg, mid_str, msg, processed):
     boards = get_boards(nc['url'], nc['user'], nc['password'])
 
     print("  Analyse Claude...", flush=True)
-    result = ask_claude(cfg['anthropic']['api_key'], boards, subject, sender, date_str, body)
+    result = ask_claude(cfg['anthropic']['api_key'], boards, subject, sender, date_str, last_body, full_body=full_body)
     print(f"  → Tableau : {result.get('boardTitle','')}", flush=True)
     print(f"  → Titre   : {result['titre']}", flush=True)
 
