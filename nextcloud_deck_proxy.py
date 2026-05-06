@@ -428,18 +428,8 @@ async function createCard(){
         if(!ar.ok){const e=await ar.text();throw new Error('Pièce jointe : HTTP '+ar.status+' — '+e.substring(0,80));}
       }
     }
-    // Envoyer pièces jointes du mail détecté
-    const pf0 = await fetch('/get-prefill').then(r=>r.json()).catch(()=>({}));
-    const mailAtts = pf0.attachments || [];
-    for(const attPath of mailAtts){
-      if(attPath === pf0.pdf) continue; // PDF déjà envoyé via fileInput
-      await fetch('/send-attachment',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({path:attPath,cardId:card.id,boardId:bid,stackId:sid,
-          ncurl:ncurl(),user:creds().user,pass:creds().pass})
-      });
-    }
+    // Les pièces jointes du mail sont déjà dans fileInput (chargées par prefillPdf)
+    // Elles seront envoyées dans la boucle fileInput ci-dessus
 
     st.className='status ok';st.textContent='Carte "'+card.title+'" créée avec succès !';btn.disabled=false;
     // Notifier le proxy et charger le mail suivant
@@ -508,7 +498,7 @@ function adjustPanelHeight(){
   const actions = document.querySelector('.actions');
   if(panel && actions){
     const rect = actions.getBoundingClientRect();
-    panel.style.height = (rect.bottom + 16) + 'px';
+    panel.style.height = rect.bottom + 'px';
   }
 }
 window.addEventListener('load', adjustPanelHeight);
@@ -641,16 +631,33 @@ window.addEventListener('DOMContentLoaded',async()=>{
 
 async function prefillPdf(pdfPath){
   try {
+    // Charger d'abord le PDF
     const r = await fetch('/file?path=' + encodeURIComponent(pdfPath));
     if(!r.ok) return;
     const blob = await r.blob();
     const filename = pdfPath.split(/[\/\\]/).pop();
-    const file = new File([blob], filename, {type: blob.type});
     const dt = new DataTransfer();
-    dt.items.add(file);
-    document.getElementById('file').files = dt.files;
-    document.getElementById('fname').textContent = filename;
+    const pdfFile = new File([blob], filename, {type: blob.type});
+    dt.items.add(pdfFile);
 
+    // Ajouter les autres pièces jointes du mail
+    const pf = await fetch('/get-prefill').then(r2=>r2.json()).catch(()=>({}));
+    const allAtts = pf.attachments || [];
+    const names = [filename];
+    for(const attPath of allAtts){
+      if(attPath === pdfPath) continue; // PDF déjà ajouté
+      try {
+        const r3 = await fetch('/file?path=' + encodeURIComponent(attPath));
+        if(!r3.ok) continue;
+        const b3 = await r3.blob();
+        const n3 = attPath.split(/[\/\\]/).pop();
+        dt.items.add(new File([b3], n3, {type: b3.type}));
+        names.push(n3);
+      } catch(e){}
+    }
+
+    document.getElementById('file').files = dt.files;
+    document.getElementById('fname').textContent = names.join(', ');
   } catch(e) { console.log('PDF prefill:', e); }
 }
 </script>
