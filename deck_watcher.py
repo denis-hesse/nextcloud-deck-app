@@ -65,18 +65,22 @@ def get_last_message_body(full_body):
     last_msg_lines = []
     for line in lines:
         stripped = line.strip()
-        # Arrêter à la première ligne citée (>, De :, From:, Le ... a écrit, On ... wrote)
         if (stripped.startswith('>') or
             stripped.startswith('De :') or
             stripped.startswith('From:') or
-            stripped.startswith('Le ') and ' a écrit' in stripped or
-            stripped.startswith('On ') and ' wrote' in stripped or
+            stripped.startswith('Envoyé :') or
+            stripped.startswith('Sent:') or
+            stripped.startswith('Date:') or
+            (stripped.startswith('Le ') and ' a écrit' in stripped) or
+            (stripped.startswith('On ') and ' wrote' in stripped) or
             stripped.startswith('-----') or
             stripped.startswith('_____')):
             break
         last_msg_lines.append(line)
     result = '\n'.join(last_msg_lines).strip()
-    return result if result else full_body  # Fallback si extraction vide
+    # Log pour debug
+    print(f"  last_body ({len(result)} chars): {result[:100]!r}", flush=True)
+    return result if len(result) > 10 else full_body
 
 def get_body(msg):
     body = ''
@@ -258,7 +262,7 @@ def fetch_deck_mails(cfg, processed):
             last_body = get_last_message_body(body)
             full_body = body
             subject = decode_header(msg.get('Subject', ''))
-            if '@deck' not in body.lower() and '@deck' not in subject.lower():
+            if '@deck' not in last_body.lower() and '@deck' not in subject.lower():
                 processed.add(mid_str)
                 save_processed(processed)
                 continue
