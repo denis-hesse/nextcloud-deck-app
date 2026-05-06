@@ -145,16 +145,15 @@ Ta mission :
 2. Titre court (max 80 caractères) — supprimer "Re:", "Fw:", "Fwd:" — ne pas répéter l'objet mot pour mot
 3. Description structurée :
    - Première ligne TOUJOURS : "{subject} — {date_str}" (sans label, sans gras)
-   - **Résumé** : 1-3 phrases sur l'essentiel (si mail de test : "Mail de test." uniquement)
-   - **Synthèse** : uniquement si contenu riche, une phrase par ligne
-   - **Actions à suivre** : uniquement si actions concrètes demandées, liste sans ligne vide entre chaque action
+   - **Résumé** : synthèse unique du contenu, maximum 600 caractères (souvent moins si peu d'informations). Si mail de test : "Mail de test." uniquement.
+   - **Actions à suivre** : uniquement si actions concrètes demandées, en liste avec bullet points (• action)
 
 Réponds UNIQUEMENT en JSON :
 {{
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
   "titre": "<titre sans Re:/Fw:/Fwd:>",
-  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé>\\n\\n**Synthèse**\\n<si applicable>\\n\\n**Actions à suivre**\\n<action1\\naction2\\naction3 — si applicable>"
+  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n• <action1>\\n• <action2>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",

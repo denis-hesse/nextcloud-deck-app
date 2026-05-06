@@ -178,7 +178,7 @@ HTML = r"""<!DOCTYPE html>
       <label class="fzone" for="file">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 8l-6 6a4 4 0 01-5.66-5.66l6-6a2.5 2.5 0 013.54 3.54l-6.01 6a1 1 0 01-1.42-1.42l5.5-5.49" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
         <span>Ajouter un fichier</span>
-        <input type="file" id="file" style="display:none" onchange="updateFile(this)"/>
+        <input type="file" id="file" style="display:none" multiple onchange="updateFile(this)"/>
       </label>
       <div class="fname" id="fname">Aucun fichier sélectionné</div>
 
@@ -204,7 +204,10 @@ function ncurl(){return document.getElementById('url').value.trim().replace(/\/$
 function creds(){return{user:document.getElementById('user').value.trim(),pass:document.getElementById('pass').value.trim()};}
 function auth(u,p){return'Basic '+btoa(unescape(encodeURIComponent(u+':'+p)));}
 function hdrs(u,p){return{'Authorization':auth(u,p),'OCS-APIRequest':'true','Accept':'application/json','Content-Type':'application/json'};}
-function updateFile(i){document.getElementById('fname').textContent=i.files[0]?i.files[0].name:'Aucun fichier sélectionné';}
+function updateFile(i){
+  const names = Array.from(i.files).map(f=>f.name).join(', ');
+  document.getElementById('fname').textContent = names || 'Aucun fichier sélectionné';
+}
 
 function saveCredentials(){
   const{user,pass}=creds();
