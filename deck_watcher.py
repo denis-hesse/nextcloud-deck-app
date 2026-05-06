@@ -168,7 +168,7 @@ Ta mission :
 3. Description structurée :
    - Commence TOUJOURS par : "**Objet, date & heure**
 {subject} — {date_str}"
-   - **Résumé** : synthèse unique du contenu, maximum 600 caractères. Chaque phrase sur une ligne séparée (saut de ligne entre chaque phrase). Si mail de test : "Mail de test." uniquement.
+   - **Résumé** : synthèse unique du contenu, maximum 600 caractères. Chaque phrase précédée d'un bullet point (• phrase) avec un seul saut de ligne entre chaque phrase. Si mail de test : "• Mail de test." uniquement.
    - **Actions à suivre** : toujours présent. Si actions identifiées : liste avec bullet points (• action). Sinon : "Pas d'action identifiée."
    - **Texte intégral du mail joint en pdf** : coller ici le texte intégral du mail (corps complet)
 
