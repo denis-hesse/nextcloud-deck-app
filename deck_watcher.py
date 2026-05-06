@@ -255,11 +255,9 @@ def fetch_deck_mails(cfg, processed):
             # Vérifier @deck dans corps ou sujet
             body = get_body(msg)
             last_body = get_last_message_body(body)
+            full_body = body
             subject = decode_header(msg.get('Subject', ''))
-            # Chercher @deck dans le dernier message OU le sujet
-            # Fallback sur body complet si last_body trop court
-            search_body = last_body if len(last_body) > 20 else body
-            if '@deck' not in search_body.lower() and '@deck' not in subject.lower():
+            if '@deck' not in body.lower() and '@deck' not in subject.lower():
                 processed.add(mid_str)
                 save_processed(processed)
                 continue
@@ -283,8 +281,8 @@ def process_mail(cfg, mid_str, msg, processed):
         date_str = dt.strftime('%d/%m/%Y %H:%M')
     except:
         date_str = date_str_raw
-    last_body = get_last_message_body(get_body(msg))
     full_body = get_body(msg)
+    last_body = get_last_message_body(full_body)
     attachments = get_attachments(msg)
 
     print(f"  📧 {subject}", flush=True)
