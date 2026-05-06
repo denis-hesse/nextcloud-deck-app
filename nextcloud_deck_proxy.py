@@ -395,7 +395,8 @@ async function createCard(){
   if(!bid||!sid||!title){st.className='status err';st.textContent='Tableau, liste et titre sont requis.';return;}
   btn.disabled=true;st.className='status loading';st.innerHTML='<span class="spin"></span>Création de la carte...';
   try{
-    const body={title,description:desc||''};
+    const finalDesc = desc + (fullBody ? '\n\n**Texte intégral du mail joint en pdf**\n' + fullBody : '');
+    const body={title, description: finalDesc||''};
     if(due)body.duedate=new Date(due).toISOString();
     const r=await fetch(purl(ncurl()+'/index.php/apps/deck/api/v1.0/boards/'+bid+'/stacks/'+sid+'/cards'),{method:'POST',headers:hdrs(user,pass),body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
