@@ -348,7 +348,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
         'mail_label': cfg['gmail']['label'],
-        'full_body': clean_body
+        'full_body': last_body
     })
 
 def main():
