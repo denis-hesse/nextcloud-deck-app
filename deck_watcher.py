@@ -332,24 +332,15 @@ def process_mail(cfg, mid_str, msg, processed):
     clean_body = full_body
     # Supprimer URLs
     clean_body = _re.sub(r'https?://\S+', '', clean_body)
-    # Supprimer les backslash devant * et -
+    # Supprimer backslash devant * et -
     clean_body = _re.sub(r'\\([*\-#])', r'\1', clean_body)
-    # Supprimer les lignes trop longues (signatures résiduelles)
+    # Supprimer les lignes trop longues
     lines = clean_body.split('\n')
-    clean_lines = []
-    for l in lines:
-        if len(l.strip()) >= 200:
-            continue
-        # Échapper # en début de ligne pour éviter les titres Markdown
-        stripped = l.lstrip()
-        if stripped.startswith('#'):
-            l = l.replace('#', '', 1)
-        # Remplacer ** et * par rien pour éviter le gras/italique
-        l = _re.sub(r'\*+', '', l)
-        clean_lines.append(l)
-    clean_body = '\n'.join(clean_lines)
-    # Supprimer les lignes vides multiples
+    clean_body = '\n'.join(l for l in lines if len(l.strip()) < 200)
+    # Supprimer lignes vides multiples
     clean_body = _re.sub(r'\n{3,}', '\n\n', clean_body).strip()
+    # Envelopper dans bloc code pour éviter interprétation Markdown
+    clean_body = '```\n' + clean_body + '\n```'
 
     send_prefill(cfg.get('app_url',''), cfg['proxy_port'], {
         'subject': subject,
