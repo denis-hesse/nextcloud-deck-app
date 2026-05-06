@@ -301,7 +301,7 @@ def process_mail(cfg, mid_str, msg, processed):
     print(f"  → Titre   : {result['titre']}", flush=True)
 
     print("  Génération PDF...", flush=True)
-    pdf_path = mail_to_pdf(subject, sender, date_str, body, attachments)
+    pdf_path = mail_to_pdf(subject, sender, date_str, full_body, attachments)
     print(f"  → PDF : {pdf_path}", flush=True)
 
     # Sauvegarder les pièces jointes en fichiers temporaires
