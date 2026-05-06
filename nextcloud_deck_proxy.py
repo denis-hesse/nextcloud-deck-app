@@ -360,9 +360,10 @@ function renderTags(){
 }
 
 function toggleTag(id){
-  const idx=selectedTagIds.indexOf(id);
+  const idStr = String(id);
+  const idx=selectedTagIds.indexOf(idStr);
   if(idx>=0){ selectedTagIds.splice(idx,1); }
-  else { selectedTagIds.push(id); }
+  else { selectedTagIds.push(idStr); }
   document.querySelectorAll('.tag').forEach(el=>{
     el.classList.toggle('selected', selectedTagIds.includes(el.dataset.id));
   });
