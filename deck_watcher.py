@@ -125,7 +125,7 @@ def mail_to_pdf(subject, sender, date_str, body, attachments):
                 config = pdfkit.configuration(wkhtmltopdf=p)
                 break
         safe = re.sub(r'[^\w\s-]', '', subject)[:40].strip().replace(' ', '_')
-        path = os.path.join(tempfile.gettempdir(), f'_mail_{safe}.pdf')
+        path = os.path.join(tempfile.gettempdir(), f'Mail_{safe}.pdf')
         opts = {'encoding': 'UTF-8', 'quiet': ''}
         if config:
             pdfkit.from_string(html, path, configuration=config, options=opts)
@@ -135,7 +135,7 @@ def mail_to_pdf(subject, sender, date_str, body, attachments):
     except Exception as e:
         print(f"  (PDF indisponible : {e})", flush=True)
         safe = re.sub(r'[^\w\s-]', '', subject)[:40].strip().replace(' ', '_')
-        path = os.path.join(tempfile.gettempdir(), f'_mail_{safe}.html')
+        path = os.path.join(tempfile.gettempdir(), f'Mail_{safe}.html')
         with open(path, 'w', encoding='utf-8') as f:
             f.write(html)
         return path
@@ -309,7 +309,7 @@ def process_mail(cfg, mid_str, msg, processed):
     for att in attachments:
         try:
             safe_name = re.sub(r'[^\w\.\-]', '_', att['name'])
-            att_path = os.path.join(tempfile.gettempdir(), f'att_{safe_name}')
+            att_path = os.path.join(tempfile.gettempdir(), f'PJ_{safe_name}')
             with open(att_path, 'wb') as f:
                 f.write(att['data'])
             attachment_paths.append(att_path)

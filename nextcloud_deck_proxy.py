@@ -415,7 +415,7 @@ async function createCard(){
       st.innerHTML='<span class="spin"></span>Attribution des tags...';
       for(const tagId of selectedTagIds){
         const tr=await fetch('/assignlabel',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({boardId:bid,cardId:card.id,labelId:parseInt(tagId),ncurl:ncurl(),user:creds().user,pass:creds().pass})
+          body:JSON.stringify({boardId:bid,stackId:sid,cardId:card.id,labelId:parseInt(tagId),ncurl:ncurl(),user:creds().user,pass:creds().pass})
         });
         console.log('Tag status:', tr.status);
       }
