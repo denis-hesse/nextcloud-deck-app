@@ -322,6 +322,14 @@ def process_mail(cfg, mid_str, msg, processed):
         except Exception as e:
             print(f"  Erreur pièce jointe {att['name']} : {e}", flush=True)
 
+    # Nettoyer le texte intégral pour éviter les artefacts Markdown
+    import re as _re
+    clean_body = full_body
+    clean_body = _re.sub(r'^#{1,6}\s*', '', clean_body, flags=_re.MULTILINE)  # Supprimer ## titres
+    clean_body = _re.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', clean_body)  # Supprimer **gras**
+    clean_body = _re.sub(r'\\\*', '*', clean_body)  # Décoder \*
+    clean_body = _re.sub(r'\\-', '-', clean_body)  # Décoder \-
+
     send_prefill(cfg.get('app_url',''), cfg['proxy_port'], {
         'subject': subject,
         'mail_date': date_str,
@@ -335,7 +343,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
         'mail_label': cfg['gmail']['label'],
-        'full_body': full_body
+        'full_body': clean_body
     })
 
 def main():
