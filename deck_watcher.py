@@ -148,10 +148,10 @@ Email reçu :
 De : {sender}
 Objet : {subject}
 Dernier message (pour analyse) :
-{last_body[:2000]}
+{body[:2000]}
 
 Texte intégral (pour paragraphe Mail avec historique) :
-{full_body[:3000]}
+{(full_body or body)[:3000]}
 
 Tableaux disponibles :
 {boards_list}
