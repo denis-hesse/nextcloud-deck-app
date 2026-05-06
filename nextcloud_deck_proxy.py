@@ -205,14 +205,17 @@ function creds(){return{user:document.getElementById('user').value.trim(),pass:d
 function auth(u,p){return'Basic '+btoa(unescape(encodeURIComponent(u+':'+p)));}
 function hdrs(u,p){return{'Authorization':auth(u,p),'OCS-APIRequest':'true','Accept':'application/json','Content-Type':'application/json'};}
 function updateFile(i){
-  const fileInput = document.getElementById('file');
   const dt = new DataTransfer();
-  // Garder les fichiers existants
-  Array.from(fileInput.files).forEach(f => dt.items.add(f));
-  // Ajouter les nouveaux
-  Array.from(i.files).forEach(f => dt.items.add(f));
-  fileInput.files = dt.files;
-  const names = Array.from(fileInput.files).map(f=>f.name).join('\n');
+  // Récupérer les fichiers déjà présents AVANT ce nouvel ajout (stockés séparément)
+  const existing = window._existingFiles || [];
+  existing.forEach(f => dt.items.add(f));
+  // Ajouter les nouveaux fichiers
+  Array.from(i.files).forEach(f => {
+    if(!existing.find(e => e.name === f.name)) dt.items.add(f);
+  });
+  i.files = dt.files;
+  window._existingFiles = Array.from(dt.files);
+  const names = Array.from(dt.files).map(f=>f.name).join('\n');
   document.getElementById('fname').textContent = names || 'Aucun fichier sélectionné';
 }
 
@@ -408,6 +411,7 @@ async function createCard(){
 
     // Assigner les tags sélectionnés
     if(selectedTagIds.length>0){
+      console.log('Tags à envoyer:', selectedTagIds);
       st.innerHTML='<span class="spin"></span>Attribution des tags...';
       for(const tagId of selectedTagIds){
         const tr=await fetch('/assignlabel',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -468,6 +472,7 @@ function resetForm(){
   document.getElementById('board').value='';
   document.getElementById('stack').innerHTML='<option value="">— sélectionner —</option>';
   document.getElementById('tags-field').style.display='none';
+  window._existingFiles = [];
   document.getElementById('assignee').innerHTML='<option value="">— aucun —</option>';
   document.getElementById('tags-wrap').innerHTML='';
   selectedTagIds=[];
@@ -661,6 +666,7 @@ async function prefillPdf(pdfPath){
     }
 
     document.getElementById('file').files = dt.files;
+    window._existingFiles = Array.from(dt.files);
     document.getElementById('fname').textContent = names.join('\n');
   } catch(e) { console.log('PDF prefill:', e); }
 }
