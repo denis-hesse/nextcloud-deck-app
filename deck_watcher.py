@@ -174,7 +174,7 @@ Ta mission :
 {subject} — {date_str}"
    - **Résumé** : synthèse unique du contenu, maximum 600 caractères. Chaque phrase précédée d'un bullet point (• phrase) avec un seul saut de ligne entre chaque phrase. Si mail de test : "• Mail de test." uniquement.
    - **Actions à suivre** : toujours présent. Si actions identifiées : liste avec bullet points (• action). Sinon : "Pas d'action identifiée."
-   - **Texte intégral du mail joint en pdf** : coller ici le texte intégral du mail (corps complet)
+   - Volet dépliant HTML à la fin : <details><summary>Texte intégral du mail joint en pdf</summary>[texte intégral du mail]</details>
 
 Réponds UNIQUEMENT en JSON :
 {{
