@@ -59,6 +59,25 @@ def decode_header(value):
             result.append(part)
     return ' '.join(result)
 
+def get_last_message_body(full_body):
+    """Extrait uniquement le dernier message en ignorant l'historique cité."""
+    lines = full_body.split('\n')
+    last_msg_lines = []
+    for line in lines:
+        stripped = line.strip()
+        # Arrêter à la première ligne citée (>, De :, From:, Le ... a écrit, On ... wrote)
+        if (stripped.startswith('>') or
+            stripped.startswith('De :') or
+            stripped.startswith('From:') or
+            stripped.startswith('Le ') and ' a écrit' in stripped or
+            stripped.startswith('On ') and ' wrote' in stripped or
+            stripped.startswith('-----') or
+            stripped.startswith('_____')):
+            break
+        last_msg_lines.append(line)
+    result = '\n'.join(last_msg_lines).strip()
+    return result if result else full_body  # Fallback si extraction vide
+
 def get_body(msg):
     body = ''
     if msg.is_multipart():
@@ -231,8 +250,9 @@ def fetch_deck_mails(cfg, processed):
 
             # Vérifier @deck dans corps ou sujet
             body = get_body(msg)
+            last_body = get_last_message_body(body)
             subject = decode_header(msg.get('Subject', ''))
-            if '@deck' not in body.lower() and '@deck' not in subject.lower():
+            if '@deck' not in last_body.lower() and '@deck' not in subject.lower():
                 processed.add(mid_str)
                 save_processed(processed)
                 continue
@@ -256,7 +276,7 @@ def process_mail(cfg, mid_str, msg, processed):
         date_str = dt.strftime('%d/%m/%Y %H:%M')
     except:
         date_str = date_str_raw
-    body = get_body(msg)
+    body = get_last_message_body(get_body(msg))
     attachments = get_attachments(msg)
 
     print(f"  📧 {subject}", flush=True)
@@ -278,6 +298,19 @@ def process_mail(cfg, mid_str, msg, processed):
     pdf_path = mail_to_pdf(subject, sender, date_str, body, attachments)
     print(f"  → PDF : {pdf_path}", flush=True)
 
+    # Sauvegarder les pièces jointes en fichiers temporaires
+    attachment_paths = [pdf_path]
+    for att in attachments:
+        try:
+            safe_name = re.sub(r'[^\w\.\-]', '_', att['name'])
+            att_path = os.path.join(tempfile.gettempdir(), f'att_{safe_name}')
+            with open(att_path, 'wb') as f:
+                f.write(att['data'])
+            attachment_paths.append(att_path)
+            print(f"  → Pièce jointe : {att['name']}", flush=True)
+        except Exception as e:
+            print(f"  Erreur pièce jointe {att['name']} : {e}", flush=True)
+
     send_prefill(cfg.get('app_url',''), cfg['proxy_port'], {
         'subject': subject,
         'mail_date': date_str,
@@ -285,6 +318,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'titre': result['titre'],
         'description': result.get('description', ''),
         'pdf': pdf_path,
+        'attachments': attachment_paths,
         'mail_mid': mid_str,
         'mail_folder': 'SENT',
         'mail_email': cfg['gmail']['email'],

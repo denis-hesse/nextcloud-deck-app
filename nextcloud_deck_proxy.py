@@ -414,16 +414,31 @@ async function createCard(){
     }
 
     // Pièce jointe via endpoint web (affichage inline)
-    if(fileInput.files[0]){
-      st.innerHTML='<span class="spin"></span>Envoi du fichier joint...';
-      const fd=new FormData();
-      fd.append('cardId', card.id);
-      fd.append('type','file');
-      fd.append('file',fileInput.files[0]);
-      const ar=await fetch(purl(ncurl()+'/index.php/apps/deck/cards/'+card.id+'/attachment'),{
-        method:'POST',headers:{'Authorization':auth(user,pass),'OCS-APIRequest':'true','requesttoken': ''},body:fd
+    // Envoyer fichiers sélectionnés manuellement (multiple)
+    if(fileInput.files.length > 0){
+      st.innerHTML='<span class="spin"></span>Envoi des fichiers...';
+      for(const file of Array.from(fileInput.files)){
+        const fd=new FormData();
+        fd.append('cardId', card.id);
+        fd.append('type','file');
+        fd.append('file', file);
+        const ar=await fetch(purl(ncurl()+'/index.php/apps/deck/cards/'+card.id+'/attachment'),{
+          method:'POST',headers:{'Authorization':auth(user,pass),'OCS-APIRequest':'true','requesttoken':''},body:fd
+        });
+        if(!ar.ok){const e=await ar.text();throw new Error('Pièce jointe : HTTP '+ar.status+' — '+e.substring(0,80));}
+      }
+    }
+    // Envoyer pièces jointes du mail détecté
+    const pf0 = await fetch('/get-prefill').then(r=>r.json()).catch(()=>({}));
+    const mailAtts = pf0.attachments || [];
+    for(const attPath of mailAtts){
+      if(attPath === pf0.pdf) continue; // PDF déjà envoyé via fileInput
+      await fetch('/send-attachment',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({path:attPath,cardId:card.id,boardId:bid,stackId:sid,
+          ncurl:ncurl(),user:creds().user,pass:creds().pass})
       });
-      if(!ar.ok){const e=await ar.text();throw new Error('Pièce jointe : HTTP '+ar.status+' — '+e.substring(0,80));}
     }
 
     st.className='status ok';st.textContent='Carte "'+card.title+'" créée avec succès !';btn.disabled=false;
@@ -790,6 +805,8 @@ class Handler(BaseHTTPRequestHandler):
             self._clear_processed()
         elif self.path == '/mark-processed':
             self._mark_processed()
+        elif self.path == '/send-attachment':
+            self._send_attachment()
         elif self.path == '/add-label':
             self._add_label()
         elif self.path == '/prefill':
@@ -888,6 +905,56 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length',len(b))
         self.end_headers()
         self.wfile.write(b)
+
+    def _send_attachment(self):
+        import base64 as b64
+        length=int(self.headers.get('Content-Length',0))
+        data=json.loads(self.rfile.read(length))
+        path=data.get('path','')
+        card_id=data.get('cardId','')
+        board_id=data.get('boardId','')
+        stack_id=data.get('stackId','')
+        ncurl=data.get('ncurl','').rstrip('/')
+        user=data.get('user','')
+        passw=data.get('pass','')
+        result={'ok':False}
+        try:
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Fichier introuvable : {path}")
+            filename=os.path.basename(path)
+            with open(path,'rb') as f2:
+                file_data=f2.read()
+            auth_str=b64.b64encode(f"{user}:{passw}".encode()).decode()
+            # Construire multipart manuellement
+            boundary=b'----DeckBoundary'
+            body=b''
+            body+=b'--'+boundary+b'\r\n'
+            body+=b'Content-Disposition: form-data; name="cardId"\r\n\r\n'
+            body+=str(card_id).encode()+b'\r\n'
+            body+=b'--'+boundary+b'\r\n'
+            body+=b'Content-Disposition: form-data; name="type"\r\n\r\n'
+            body+=b'file\r\n'
+            body+=b'--'+boundary+b'\r\n'
+            body+=f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode()
+            body+=b'Content-Type: application/octet-stream\r\n\r\n'
+            body+=file_data+b'\r\n'
+            body+=b'--'+boundary+b'--\r\n'
+            url=f"{ncurl}/index.php/apps/deck/cards/{card_id}/attachment"
+            req=urllib.request.Request(url,data=body,
+                headers={'Authorization':f'Basic {auth_str}','OCS-APIRequest':'true',
+                         'Content-Type':f'multipart/form-data; boundary={boundary.decode()}'},
+                method='POST')
+            with urllib.request.urlopen(req,timeout=30) as resp:
+                result={'ok':True,'status':resp.status}
+            print(f"  Pièce jointe mail envoyée : {filename}",flush=True)
+        except Exception as e:
+            result={'ok':False,'msg':str(e)}
+            print(f"  Erreur pièce jointe : {e}",flush=True)
+        rb=json.dumps(result).encode()
+        self.send_response(200);self.send_cors()
+        self.send_header('Content-Type','application/json')
+        self.send_header('Content-Length',len(rb))
+        self.end_headers();self.wfile.write(rb)
 
     def _add_label(self):
         import imaplib as imap_lib
