@@ -205,7 +205,14 @@ function creds(){return{user:document.getElementById('user').value.trim(),pass:d
 function auth(u,p){return'Basic '+btoa(unescape(encodeURIComponent(u+':'+p)));}
 function hdrs(u,p){return{'Authorization':auth(u,p),'OCS-APIRequest':'true','Accept':'application/json','Content-Type':'application/json'};}
 function updateFile(i){
-  const names = Array.from(i.files).map(f=>f.name).join(', ');
+  const fileInput = document.getElementById('file');
+  const dt = new DataTransfer();
+  // Garder les fichiers existants
+  Array.from(fileInput.files).forEach(f => dt.items.add(f));
+  // Ajouter les nouveaux
+  Array.from(i.files).forEach(f => dt.items.add(f));
+  fileInput.files = dt.files;
+  const names = Array.from(fileInput.files).map(f=>f.name).join('\n');
   document.getElementById('fname').textContent = names || 'Aucun fichier sélectionné';
 }
 
@@ -399,18 +406,15 @@ async function createCard(){
       });
     }
 
-    // Assigner le tag via endpoint dédié du proxy local (évite preflight CORS)
-    if(selectedTagId){
-      const tr = await fetch('/assignlabel', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          ncurl: ncurl(), user: creds().user, pass: creds().pass,
-          boardId: bid, stackId: sid, cardId: card.id,
-          labelId: parseInt(selectedTagId)
-        })
-      });
-      console.log('Tag status:', tr.status);
+    // Assigner les tags sélectionnés
+    if(selectedTagIds.length>0){
+      st.innerHTML='<span class="spin"></span>Attribution des tags...';
+      for(const tagId of selectedTagIds){
+        const tr=await fetch('/assignlabel',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({boardId:bid,cardId:card.id,labelId:parseInt(tagId),ncurl:ncurl(),user:creds().user,pass:creds().pass})
+        });
+        console.log('Tag status:', tr.status);
+      }
     }
 
     // Pièce jointe via endpoint web (affichage inline)
