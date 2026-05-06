@@ -162,6 +162,10 @@ HTML = r"""<!DOCTYPE html>
     
     <div class="f"><label class="lbl">Titre</label><input type="text" id="title" placeholder="Titre de la carte..."/></div>
     <div class="f"><label class="lbl">Description</label><textarea id="desc" placeholder="Description (optionnel)..."></textarea></div>
+    <details id="mail-full-details" style="margin-bottom:12px;border:1px solid var(--border);border-radius:var(--rs);padding:0;">
+      <summary style="cursor:pointer;padding:8px 12px;font-size:13px;font-weight:600;color:var(--muted);user-select:none;">Texte intégral du mail</summary>
+      <div id="mail-full-body" style="padding:10px 12px;font-size:12px;font-family:'DM Mono',monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:var(--text);border-top:1px solid var(--border);"></div>
+    </details>
     <div class="f" id="tags-field">
       
       <div class="tags-wrap" id="tags-wrap"></div>
@@ -384,6 +388,7 @@ async function createCard(){
   const bid=document.getElementById('board').value,sid=document.getElementById('stack').value;
   const title=document.getElementById('title').value.trim();
   const desc=document.getElementById('desc').value.trim();
+  const fullBody=document.getElementById('mail-full-body').textContent.trim();
   const due=document.getElementById('due').value;
   const fileInput=document.getElementById('file');
   const st=document.getElementById('status'),btn=document.getElementById('submit');
@@ -473,6 +478,8 @@ function resetForm(){
   document.getElementById('stack').innerHTML='<option value="">— sélectionner —</option>';
   document.getElementById('tags-field').style.display='none';
   window._existingFiles = [];
+  document.getElementById('mail-full-body').textContent = '';
+  document.getElementById('mail-full-details').style.display = 'none';
   document.getElementById('assignee').innerHTML='<option value="">— aucun —</option>';
   document.getElementById('tags-wrap').innerHTML='';
   selectedTagIds=[];
@@ -556,6 +563,12 @@ async function loadNewMail(){
   document.title = 'Nextcloud Deck';
   try {
     const data = await fetch('/get-prefill').then(r=>r.json());
+    if(data.full_body){
+      document.getElementById('mail-full-body').textContent = data.full_body;
+      document.getElementById('mail-full-details').style.display = 'block';
+    } else {
+      document.getElementById('mail-full-details').style.display = 'none';
+    }
     if(data.titre) document.getElementById('title').value = data.titre;
     if(data.description) document.getElementById('desc').value = data.description;
     if(data.pdf) prefillPdf(data.pdf);
@@ -618,7 +631,13 @@ window.addEventListener('DOMContentLoaded',async()=>{
       const check = await fetch('/has-prefill').then(r=>r.json());
       if(check.has){
         const data = await fetch('/get-prefill').then(r=>r.json());
-        if(data.titre) document.getElementById('title').value = data.titre;
+        if(data.full_body){
+      document.getElementById('mail-full-body').textContent = data.full_body;
+      document.getElementById('mail-full-details').style.display = 'block';
+    } else {
+      document.getElementById('mail-full-details').style.display = 'none';
+    }
+    if(data.titre) document.getElementById('title').value = data.titre;
         if(data.description) document.getElementById('desc').value = data.description;
         if(data.pdf) prefillPdf(data.pdf);
         if(data.boardId){

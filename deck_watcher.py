@@ -174,14 +174,14 @@ Ta mission :
 {subject} — {date_str}"
    - **Résumé** : synthèse unique du contenu, maximum 600 caractères. Chaque phrase précédée d'un bullet point (• phrase) avec un seul saut de ligne entre chaque phrase. Si mail de test : "• Mail de test." uniquement.
    - **Actions à suivre** : toujours présent. Si actions identifiées : liste avec bullet points (• action). Sinon : "Pas d'action identifiée."
-   - **Texte intégral du mail joint en pdf** : coller ici le texte intégral du mail (corps complet)
+
 
 Réponds UNIQUEMENT en JSON :
 {{
   "boardId": <id ou null>,
   "boardTitle": "<nom ou vide>",
   "titre": "<titre sans Re:/Fw:/Fwd:>",
-  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n<actions ou Pas d'action identifiée.>\\n\\n**Texte intégral du mail joint en pdf**\\n<texte intégral>"
+  "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n<actions ou Pas d'action identifiée.>"
 }}"""
     payload = json.dumps({
         "model": "claude-sonnet-4-5",
@@ -334,7 +334,8 @@ def process_mail(cfg, mid_str, msg, processed):
         'mail_folder': 'SENT',
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
-        'mail_label': cfg['gmail']['label']
+        'mail_label': cfg['gmail']['label'],
+        'full_body': full_body
     })
 
 def main():
