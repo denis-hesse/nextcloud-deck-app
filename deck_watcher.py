@@ -256,7 +256,10 @@ def fetch_deck_mails(cfg, processed):
             body = get_body(msg)
             last_body = get_last_message_body(body)
             subject = decode_header(msg.get('Subject', ''))
-            if '@deck' not in last_body.lower() and '@deck' not in subject.lower():
+            # Chercher @deck dans le dernier message OU le sujet
+            # Fallback sur body complet si last_body trop court
+            search_body = last_body if len(last_body) > 20 else body
+            if '@deck' not in search_body.lower() and '@deck' not in subject.lower():
                 processed.add(mid_str)
                 save_processed(processed)
                 continue
