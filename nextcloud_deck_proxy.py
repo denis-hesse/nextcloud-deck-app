@@ -9,6 +9,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import os
 import urllib.request, urllib.error, urllib.parse
 import json, sys
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+TZ_PARIS = ZoneInfo('Europe/Paris')
 
 PORT = 8765
 
@@ -916,10 +920,10 @@ class Handler(BaseHTTPRequestHandler):
             prefill_data = {}
             current_mid = ''
             print(f"  File d'attente vide.")
-        # Ajouter à l'historique
-        from datetime import datetime as dt
+        # Ajouter à l'historique (heure Paris, pas UTC serveur Railway)
+        now_paris = datetime.now(tz=timezone.utc).astimezone(TZ_PARIS)
         history_log.append({
-            'date': dt.now().strftime('%d/%m/%Y %H:%M'),
+            'date': now_paris.strftime('%d/%m/%Y %H:%M'),
             'titre': titre_courant,
             'action': action
         })
