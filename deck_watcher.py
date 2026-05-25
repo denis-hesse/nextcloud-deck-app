@@ -32,7 +32,6 @@ def load_config():
     return cfg
 
 def load_processed():
-    """Lire les mids traités depuis le fichier."""
     if os.path.exists(PROCESSED_FILE):
         try:
             with open(PROCESSED_FILE) as f:
@@ -42,7 +41,6 @@ def load_processed():
     return set()
 
 def save_processed(processed_set):
-    """Sauvegarder les mids traités dans le fichier."""
     try:
         with open(PROCESSED_FILE, 'w') as f:
             json.dump(list(processed_set)[-500:], f)
@@ -72,7 +70,6 @@ def get_body(msg):
             elif ct == 'text/html' and not body and 'attachment' not in cd:
                 charset = part.get_content_charset() or 'utf-8'
                 html = part.get_payload(decode=True).decode(charset, errors='replace')
-                # Supprimer balises de mise en forme avant conversion
                 html = re.sub(r'<(strong|b|em|i|u|h[1-6])[^>]*>(.*?)</\1>', r'\2', html, flags=re.DOTALL|re.IGNORECASE)
                 html = re.sub(r'<br\s*/?>', '\n', html, flags=re.IGNORECASE)
                 html = re.sub(r'<p[^>]*>', '\n', html, flags=re.IGNORECASE)
@@ -158,7 +155,6 @@ Ta mission :
    - **Résumé** : synthèse unique du contenu, maximum 600 caractères. Chaque phrase précédée d'un bullet point (• phrase) avec un seul saut de ligne entre chaque phrase. Si mail de test : "• Mail de test." uniquement.
    - **Actions à suivre** : toujours présent. Si actions identifiées : liste avec bullet points (• action). Sinon : "Pas d'action identifiée."
 
-
 Réponds UNIQUEMENT en JSON :
 {{
   "boardId": <id ou null>,
@@ -214,38 +210,51 @@ def fetch_deck_mails(cfg, processed):
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
 
-        # Surveiller la boîte de réception (mails reçus via Cci sur l'alias)
-        # → disponibilité IMAP immédiate, sans le délai des Messages envoyés
         status, _ = mail.select('INBOX')
         if status != 'OK':
             print("  Impossible d'accéder à la boîte de réception", flush=True)
             mail.logout()
             return []
 
-        # Alias de réception dédié (ex: deck@bt-conseil.net)
-        # Configuré via variable d'environnement GMAIL_ALIAS sur Railway
         alias = cfg['gmail'].get('alias', '')
         if not alias:
             print("  ERREUR : GMAIL_ALIAS non configuré", flush=True)
             mail.logout()
             return []
 
-        # Filtre SINCE : hier + aujourd'hui.
         since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
-        _, data = mail.search(None, f'SINCE {since} TO "{alias}"')
+        # Filtre IMAP large — le filtrage sur l'alias se fait en Python sur les en-têtes
+        _, data = mail.search(None, f'SINCE {since}')
         mail_ids = data[0].split()
-        print(f"  {len(mail_ids)} mail(s) trouvés depuis {since} (Cci {alias})", flush=True)
+        print(f"  {len(mail_ids)} mail(s) depuis {since}, filtrage Cci {alias}...", flush=True)
 
         new_mails = []
 
         for mid in mail_ids:
             mid_str = mid.decode() if isinstance(mid, bytes) else str(mid)
 
-            # Déjà traité ?
             if mid_str in processed:
                 continue
 
-            # Récupérer le mail
+            # Récupérer uniquement les headers To/Cc/Bcc (plus rapide que RFC822 complet)
+            _, hdr_data = mail.fetch(mid, '(BODY[HEADER.FIELDS (TO CC BCC SUBJECT)])')
+            hdr_raw = hdr_data[0][1]
+            hdr_msg = email.message_from_bytes(hdr_raw)
+
+            # Vérifier si l'alias est dans To, Cc ou Bcc
+            to_cc = ' '.join(filter(None, [
+                hdr_msg.get('To', ''),
+                hdr_msg.get('Cc', ''),
+                hdr_msg.get('Bcc', '')
+            ])).lower()
+
+            if alias.lower() not in to_cc:
+                # Pas destiné à l'alias — marquer traité silencieusement
+                processed.add(mid_str)
+                save_processed(processed)
+                continue
+
+            # Mail destiné à l'alias → récupérer complet
             _, msg_data = mail.fetch(mid, '(RFC822)')
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
@@ -308,16 +317,11 @@ def process_mail(cfg, mid_str, msg, processed):
     # Nettoyer le texte intégral pour éviter les artefacts Markdown
     import re as _re
     clean_body = full_body
-    # Supprimer URLs
     clean_body = _re.sub(r'https?://\S+', '', clean_body)
-    # Supprimer backslash devant * et -
     clean_body = _re.sub(r'\\([*\-#])', r'\1', clean_body)
-    # Supprimer les lignes trop longues
     lines = clean_body.split('\n')
     clean_body = '\n'.join(l for l in lines if len(l.strip()) < 200)
-    # Supprimer lignes vides multiples
     clean_body = _re.sub(r'\n{3,}', '\n\n', clean_body).strip()
-    # Envelopper dans bloc code pour éviter interprétation Markdown
     clean_body = '```\n' + clean_body + '\n```'
 
     send_prefill(cfg.get('app_url',''), cfg['proxy_port'], {
