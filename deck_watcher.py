@@ -60,45 +60,6 @@ def decode_header(value):
             result.append(part)
     return ' '.join(result)
 
-def get_last_message_body(full_body):
-    """Extrait uniquement le dernier message en ignorant l'historique cité.
-    
-    CORRECTION : la détection de coupure est rendue moins agressive.
-    On ne coupe que sur des lignes qui sont clairement des marqueurs
-    d'historique de mail, pas sur du contenu normal.
-    """
-    lines = full_body.split('\n')
-    last_msg_lines = []
-    for line in lines:
-        stripped = line.strip()
-        # Ignorer les lignes vides dans la détection
-        if not stripped:
-            last_msg_lines.append(line)
-            continue
-        # Marqueurs clairs d'historique cité
-        if stripped.startswith('>'):
-            break
-        # Séparateurs d'historique (tirets/underscores sur toute la ligne)
-        if re.match(r'^[-_]{5,}', stripped):
-            break
-        # Entêtes de mail cité : doivent être sur une ligne dédiée
-        # et suivis immédiatement d'une valeur (évite les faux positifs)
-        if re.match(r'^(De\s*:|From\s*:|Envoyé\s*:|Sent\s*:)\s+\S', stripped, re.IGNORECASE):
-            break
-        # "Le ... a écrit :" ou "On ... wrote:"
-        if re.match(r'^(Le |On ).{5,50}(a écrit|wrote)\s*:', stripped):
-            break
-        last_msg_lines.append(line)
-
-    result = '\n'.join(last_msg_lines).strip()
-    print(f"  last_body ({len(result)} chars): {result[:150]!r}", flush=True)
-    # Fallback : si le résultat est trop court, utiliser le corps complet
-    return result if len(result) > 10 else full_body
-
-def contains_deck_marker(text):
-    """Vérifie si @deck est présent dans le texte (insensible à la casse)."""
-    return '@deck' in text.lower()
-
 def get_body(msg):
     body = ''
     if msg.is_multipart():
@@ -173,7 +134,7 @@ def ask_claude(api_key, boards, subject, sender, date_str, body, full_body=None)
 Email reçu :
 De : {sender}
 Objet : {subject}
-Dernier message (pour analyse) :
+Corps du message :
 {body[:2000]}
 
 Texte intégral (pour paragraphe Mail avec historique) :
@@ -183,7 +144,7 @@ Tableaux disponibles :
 {boards_list}
 
 RÈGLES STRICTES :
-- Ne jamais mentionner @deck, Nextcloud, outils techniques, coordonnées de l'expéditeur
+- Ne jamais mentionner Nextcloud, outils techniques, coordonnées de l'expéditeur
 - Si mail de test ou vide : description = "**Résumé**\\nMail de test."
 - Si aucun tableau ne correspond clairement : boardId = null, boardTitle = ""
 - Description proportionnelle au contenu réel
@@ -248,7 +209,7 @@ def send_prefill(app_url, port, data):
 STARTUP_TIME = datetime.now()
 
 def fetch_deck_mails(cfg, processed):
-    """Récupère les mails reçus sur l'alias @deck non encore traités."""
+    """Récupère les mails reçus en Cci sur l'alias deck non encore traités."""
     try:
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
@@ -270,9 +231,6 @@ def fetch_deck_mails(cfg, processed):
             return []
 
         # Filtre SINCE : hier + aujourd'hui.
-        # Rationale : IMAP SINCE ignore l'heure (date seule). On prend hier
-        # pour couvrir les mails envoyés juste avant minuit sans risquer de
-        # rater un mail récent après un redémarrage court.
         since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
         _, data = mail.search(None, f'SINCE {since} TO "{alias}"')
         mail_ids = data[0].split()
@@ -293,24 +251,7 @@ def fetch_deck_mails(cfg, processed):
             msg = email.message_from_bytes(raw)
 
             subject = decode_header(msg.get('Subject', ''))
-            body = get_body(msg)
-            last_body = get_last_message_body(body)
-
-            # Vérifier @deck dans le sujet d'abord (rapide),
-            # puis dans le dernier message, puis dans le corps complet.
-            has_deck = (
-                contains_deck_marker(subject) or
-                contains_deck_marker(last_body) or
-                contains_deck_marker(body)
-            )
-
-            if not has_deck:
-                print(f"  Pas de @deck (mid={mid_str}, sujet={subject[:40]})", flush=True)
-                processed.add(mid_str)
-                save_processed(processed)
-                continue
-
-            print(f"  @deck trouvé : {subject} (mid={mid_str})", flush=True)
+            print(f"  Mail Cci deck trouvé : {subject} (mid={mid_str})", flush=True)
             new_mails.append((mid_str, msg))
 
         mail.logout()
@@ -330,7 +271,6 @@ def process_mail(cfg, mid_str, msg, processed):
     except:
         date_str = date_str_raw
     full_body = get_body(msg)
-    last_body = get_last_message_body(full_body)
     attachments = get_attachments(msg)
 
     print(f"  📧 {subject}", flush=True)
@@ -344,7 +284,7 @@ def process_mail(cfg, mid_str, msg, processed):
     boards = get_boards(nc['url'], nc['user'], nc['password'])
 
     print("  Analyse Claude...", flush=True)
-    result = ask_claude(cfg['anthropic']['api_key'], boards, subject, sender, date_str, last_body, full_body=full_body)
+    result = ask_claude(cfg['anthropic']['api_key'], boards, subject, sender, date_str, full_body)
     print(f"  → Tableau : {result.get('boardTitle','')}", flush=True)
     print(f"  → Titre   : {result['titre']}", flush=True)
 
@@ -409,7 +349,6 @@ def main():
 
     while True:
         print(f"  [{datetime.now().strftime('%H:%M:%S')}] Vérification...", flush=True)
-        # Recharger processed à chaque cycle
         processed = load_processed()
         mails = fetch_deck_mails(cfg, processed)
         if mails:
