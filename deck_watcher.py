@@ -16,6 +16,7 @@ def load_config():
         'gmail': {
             'email': os.environ.get('GMAIL_EMAIL', ''),
             'app_password': os.environ.get('GMAIL_APP_PASSWORD', ''),
+            'alias': os.environ.get('GMAIL_ALIAS', ''),
             'label': os.environ.get('GMAIL_LABEL', 'DECK'),
             'check_interval_seconds': int(os.environ.get('CHECK_INTERVAL', '30'))
         },
@@ -205,7 +206,6 @@ Réponds UNIQUEMENT en JSON :
   "description": "{subject} — {date_str}\\n\\n**Résumé**\\n<résumé max 600 caractères>\\n\\n**Actions à suivre**\\n<actions ou Pas d'action identifiée.>"
 }}"""
     payload = json.dumps({
-        # CORRECTION : modèle mis à jour (claude-sonnet-4-5 déprécié)
         "model": "claude-sonnet-4-6",
         "max_tokens": 4000,
         "messages": [{"role": "user", "content": prompt}]
@@ -248,14 +248,24 @@ def send_prefill(app_url, port, data):
 STARTUP_TIME = datetime.now()
 
 def fetch_deck_mails(cfg, processed):
-    """Récupère les mails envoyés avec @deck non encore traités."""
+    """Récupère les mails reçus sur l'alias @deck non encore traités."""
     try:
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
 
-        status, _ = mail.select('"[Gmail]/Messages envoy&AOk-s"')
+        # Surveiller la boîte de réception (mails reçus via Cci sur l'alias)
+        # → disponibilité IMAP immédiate, sans le délai des Messages envoyés
+        status, _ = mail.select('INBOX')
         if status != 'OK':
-            print("  Impossible d'accéder aux Messages envoyés", flush=True)
+            print("  Impossible d'accéder à la boîte de réception", flush=True)
+            mail.logout()
+            return []
+
+        # Alias de réception dédié (ex: deck@bt-conseil.net)
+        # Configuré via variable d'environnement GMAIL_ALIAS sur Railway
+        alias = cfg['gmail'].get('alias', '')
+        if not alias:
+            print("  ERREUR : GMAIL_ALIAS non configuré", flush=True)
             mail.logout()
             return []
 
@@ -263,13 +273,10 @@ def fetch_deck_mails(cfg, processed):
         # Rationale : IMAP SINCE ignore l'heure (date seule). On prend hier
         # pour couvrir les mails envoyés juste avant minuit sans risquer de
         # rater un mail récent après un redémarrage court.
-        # On garde une fenêtre courte (1 jour) pour éviter de réévaluer
-        # de nombreux anciens mails après un redémarrage Railway
-        # (le fichier /tmp/deck_processed.json est perdu au redémarrage).
         since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
-        _, data = mail.search(None, f'SINCE {since}')
+        _, data = mail.search(None, f'SINCE {since} TO "{alias}"')
         mail_ids = data[0].split()
-        print(f"  {len(mail_ids)} mail(s) trouvés depuis {since}", flush=True)
+        print(f"  {len(mail_ids)} mail(s) trouvés depuis {since} (Cci {alias})", flush=True)
 
         new_mails = []
 
@@ -289,20 +296,15 @@ def fetch_deck_mails(cfg, processed):
             body = get_body(msg)
             last_body = get_last_message_body(body)
 
-            # CORRECTION : vérifier @deck dans le sujet d'abord (rapide),
+            # Vérifier @deck dans le sujet d'abord (rapide),
             # puis dans le dernier message, puis dans le corps complet.
-            # Ne PAS marquer comme traité si non détecté — laisser une
-            # nouvelle chance au prochain cycle (cas des mails en transit).
-            # On marque comme traité UNIQUEMENT les mails clairement sans @deck
-            # en vérifiant aussi le corps complet.
             has_deck = (
                 contains_deck_marker(subject) or
                 contains_deck_marker(last_body) or
-                contains_deck_marker(body)  # filet de sécurité sur le corps complet
+                contains_deck_marker(body)
             )
 
             if not has_deck:
-                # Marquer comme traité seulement si @deck absent du corps COMPLET
                 print(f"  Pas de @deck (mid={mid_str}, sujet={subject[:40]})", flush=True)
                 processed.add(mid_str)
                 save_processed(processed)
@@ -387,7 +389,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'pdf': pdf_path,
         'attachments': attachment_paths,
         'mail_mid': mid_str,
-        'mail_folder': 'SENT',
+        'mail_folder': 'INBOX',
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
         'mail_label': cfg['gmail']['label'],
@@ -397,9 +399,10 @@ def process_mail(cfg, mid_str, msg, processed):
 def main():
     cfg = load_config()
     interval = cfg['gmail']['check_interval_seconds']
+    alias = cfg['gmail'].get('alias', '(non configuré)')
 
     print(f"  Deck Watcher démarré", flush=True)
-    print(f"  Surveillance : mails envoyés contenant @deck", flush=True)
+    print(f"  Surveillance : boîte de réception, Cci sur {alias}", flush=True)
     print(f"  Intervalle   : toutes les {interval}s", flush=True)
     print(f"  APP_URL : {cfg.get('app_url','NON DEFINI')}", flush=True)
     print(f"  Ctrl+C pour arrêter\n", flush=True)
