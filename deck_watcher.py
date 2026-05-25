@@ -205,28 +205,24 @@ def send_prefill(app_url, port, data):
 STARTUP_TIME = datetime.now()
 
 def fetch_deck_mails(cfg, processed):
-    """Récupère les mails reçus en Cci sur l'alias deck non encore traités."""
+    """Récupère les mails portant le label DECK non encore traités."""
     try:
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
 
-        status, _ = mail.select('INBOX')
+        # Surveiller le label DECK
+        # Gmail applique le label via filtre dès réception → disponible immédiatement
+        label = cfg['gmail'].get('label', 'DECK')
+        status, _ = mail.select(f'"{label}"')
         if status != 'OK':
-            print("  Impossible d'accéder à la boîte de réception", flush=True)
-            mail.logout()
-            return []
-
-        alias = cfg['gmail'].get('alias', '')
-        if not alias:
-            print("  ERREUR : GMAIL_ALIAS non configuré", flush=True)
+            print(f"  Impossible d'accéder au label {label}", flush=True)
             mail.logout()
             return []
 
         since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
-        # Filtre IMAP large — le filtrage sur l'alias se fait en Python sur les en-têtes
         _, data = mail.search(None, f'SINCE {since}')
         mail_ids = data[0].split()
-        print(f"  {len(mail_ids)} mail(s) depuis {since}, filtrage Cci {alias}...", flush=True)
+        print(f"  {len(mail_ids)} mail(s) trouvés depuis {since} (label {label})", flush=True)
 
         new_mails = []
 
@@ -236,31 +232,12 @@ def fetch_deck_mails(cfg, processed):
             if mid_str in processed:
                 continue
 
-            # Récupérer uniquement les headers To/Cc/Bcc (plus rapide que RFC822 complet)
-            _, hdr_data = mail.fetch(mid, '(BODY[HEADER.FIELDS (TO CC BCC SUBJECT)])')
-            hdr_raw = hdr_data[0][1]
-            hdr_msg = email.message_from_bytes(hdr_raw)
-
-            # Vérifier si l'alias est dans To, Cc ou Bcc
-            to_cc = ' '.join(filter(None, [
-                hdr_msg.get('To', ''),
-                hdr_msg.get('Cc', ''),
-                hdr_msg.get('Bcc', '')
-            ])).lower()
-
-            if alias.lower() not in to_cc:
-                # Pas destiné à l'alias — marquer traité silencieusement
-                processed.add(mid_str)
-                save_processed(processed)
-                continue
-
-            # Mail destiné à l'alias → récupérer complet
             _, msg_data = mail.fetch(mid, '(RFC822)')
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
 
             subject = decode_header(msg.get('Subject', ''))
-            print(f"  Mail Cci deck trouvé : {subject} (mid={mid_str})", flush=True)
+            print(f"  Mail DECK trouvé : {subject} (mid={mid_str})", flush=True)
             new_mails.append((mid_str, msg))
 
         mail.logout()
@@ -333,7 +310,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'pdf': pdf_path,
         'attachments': attachment_paths,
         'mail_mid': mid_str,
-        'mail_folder': 'INBOX',
+        'mail_folder': label,
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
         'mail_label': cfg['gmail']['label'],
@@ -343,10 +320,10 @@ def process_mail(cfg, mid_str, msg, processed):
 def main():
     cfg = load_config()
     interval = cfg['gmail']['check_interval_seconds']
-    alias = cfg['gmail'].get('alias', '(non configuré)')
+    label = cfg['gmail'].get('label', 'DECK')
 
     print(f"  Deck Watcher démarré", flush=True)
-    print(f"  Surveillance : boîte de réception, Cci sur {alias}", flush=True)
+    print(f"  Surveillance : label Gmail {label}", flush=True)
     print(f"  Intervalle   : toutes les {interval}s", flush=True)
     print(f"  APP_URL : {cfg.get('app_url','NON DEFINI')}", flush=True)
     print(f"  Ctrl+C pour arrêter\n", flush=True)
