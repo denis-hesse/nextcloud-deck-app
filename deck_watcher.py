@@ -310,7 +310,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'pdf': pdf_path,
         'attachments': attachment_paths,
         'mail_mid': mid_str,
-        'mail_folder': label,
+        'mail_folder': cfg['gmail'].get('label', 'DECK'),
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
         'mail_label': cfg['gmail']['label'],
