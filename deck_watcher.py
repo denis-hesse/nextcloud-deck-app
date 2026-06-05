@@ -5,8 +5,6 @@ from datetime import datetime, timedelta
 
 print("=== DECK WATCHER DEMARRE ===", flush=True)
 
-PROCESSED_FILE = '/tmp/deck_processed.json'
-
 def load_config():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
     if os.path.exists(path):
@@ -16,8 +14,9 @@ def load_config():
         'gmail': {
             'email': os.environ.get('GMAIL_EMAIL', ''),
             'app_password': os.environ.get('GMAIL_APP_PASSWORD', ''),
-            'alias': os.environ.get('GMAIL_ALIAS', ''),
-            'label': os.environ.get('GMAIL_LABEL', 'DECK'),
+            'alias': os.environ.get('GMAIL_ALIAS', 'deck@bt-conseil.net'),
+            'label': os.environ.get('GMAIL_LABEL', '@deck'),
+            'label_id': os.environ.get('GMAIL_LABEL_ID', 'Label_1497049481571525327'),
             'check_interval_seconds': int(os.environ.get('CHECK_INTERVAL', '30'))
         },
         'anthropic': {'api_key': os.environ.get('ANTHROPIC_API_KEY', '')},
@@ -30,22 +29,6 @@ def load_config():
         'app_url': os.environ.get('APP_URL', '')
     }
     return cfg
-
-def load_processed():
-    if os.path.exists(PROCESSED_FILE):
-        try:
-            with open(PROCESSED_FILE) as f:
-                return set(str(x) for x in json.load(f))
-        except:
-            pass
-    return set()
-
-def save_processed(processed_set):
-    try:
-        with open(PROCESSED_FILE, 'w') as f:
-            json.dump(list(processed_set)[-500:], f)
-    except Exception as e:
-        print(f"  Erreur sauvegarde : {e}", flush=True)
 
 def decode_header(value):
     if not value: return ''
@@ -202,42 +185,60 @@ def send_prefill(app_url, port, data):
     urllib.request.urlopen(req, timeout=5)
     print(f"  Formulaire prêt.", flush=True)
 
-STARTUP_TIME = datetime.now()
-
-def fetch_deck_mails(cfg, processed):
-    """Récupère les mails portant le label DECK non encore traités."""
+def apply_deck_label(cfg, mid_str):
+    """Applique le label @deck sur le mail via Gmail API pour marquer comme traité."""
+    import base64
+    label_id = cfg['gmail'].get('label_id', 'Label_1497049481571525327')
+    email_addr = cfg['gmail']['email']
+    app_password = cfg['gmail']['app_password']
     try:
+        mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
+        mail.login(email_addr, app_password)
+        # Sélectionner Envoyés pour accéder au message
+        mail.select('"[Gmail]/Sent Mail"')
+        # Appliquer le label via commande IMAP STORE
+        mail.store(mid_str.encode() if isinstance(mid_str, str) else mid_str,
+                   '+X-GM-LABELS', f'"@deck"')
+        mail.logout()
+        print(f"  ✓ Label @deck appliqué (mid={mid_str})", flush=True)
+    except Exception as e:
+        print(f"  ⚠ Impossible d'appliquer le label @deck : {e}", flush=True)
+
+def fetch_deck_mails(cfg):
+    """Récupère les mails envoyés à l'alias deck@ sans le label @deck (non traités)."""
+    try:
+        alias = cfg['gmail'].get('alias', 'deck@bt-conseil.net')
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
 
-        # Surveiller le label DECK
-        # Gmail applique le label via filtre dès réception → disponible immédiatement
-        label = cfg['gmail'].get('label', 'DECK')
-        status, _ = mail.select(f'"{label}"')
+        # Surveiller le dossier Envoyés
+        status, _ = mail.select('"[Gmail]/Sent Mail"')
         if status != 'OK':
-            print(f"  Impossible d'accéder au label {label}", flush=True)
+            print(f"  Impossible d'accéder aux Envoyés", flush=True)
             mail.logout()
             return []
 
-        since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
-        _, data = mail.search(None, f'SINCE {since}')
+        # Chercher mails envoyés à l'alias deck@ sans le label @deck
+        since = (datetime.now() - timedelta(days=30)).strftime("%d-%b-%Y")
+        _, data = mail.search(None, f'SINCE {since} TO "{alias}"')
         mail_ids = data[0].split()
-        print(f"  {len(mail_ids)} mail(s) trouvés depuis {since} (label {label})", flush=True)
+        print(f"  {len(mail_ids)} mail(s) envoyé(s) à {alias} depuis {since}", flush=True)
 
         new_mails = []
-
         for mid in mail_ids:
             mid_str = mid.decode() if isinstance(mid, bytes) else str(mid)
 
-            if mid_str in processed:
-                continue
+            # Vérifier si le label @deck est déjà appliqué
+            _, label_data = mail.fetch(mid, '(X-GM-LABELS)')
+            label_str = label_data[0].decode() if label_data and label_data[0] else ''
+            if '@deck' in label_str.lower():
+                continue  # Déjà traité
 
             _, msg_data = mail.fetch(mid, '(RFC822)')
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
-
             subject = decode_header(msg.get('Subject', ''))
-            print(f"  Mail DECK trouvé : {subject} (mid={mid_str})", flush=True)
+            print(f"  Mail deck@ trouvé : {subject} (mid={mid_str})", flush=True)
             new_mails.append((mid_str, msg))
 
         mail.logout()
@@ -246,7 +247,7 @@ def fetch_deck_mails(cfg, processed):
         print(f"  Erreur Gmail : {e}", flush=True)
         return []
 
-def process_mail(cfg, mid_str, msg, processed):
+def process_mail(cfg, mid_str, msg):
     subject = decode_header(msg.get('Subject', '(sans objet)'))
     sender = decode_header(msg.get('From', ''))
     date_str_raw = msg.get('Date', '')
@@ -261,9 +262,8 @@ def process_mail(cfg, mid_str, msg, processed):
 
     print(f"  📧 {subject}", flush=True)
 
-    # Marquer immédiatement comme traité pour éviter doublons
-    processed.add(mid_str)
-    save_processed(processed)
+    # Appliquer immédiatement le label @deck pour éviter double traitement
+    apply_deck_label(cfg, mid_str)
 
     nc = cfg['nextcloud']
     print("  Récupération tableaux...", flush=True)
@@ -310,7 +310,7 @@ def process_mail(cfg, mid_str, msg, processed):
         'pdf': pdf_path,
         'attachments': attachment_paths,
         'mail_mid': mid_str,
-        'mail_folder': cfg['gmail'].get('label', 'DECK'),
+        'mail_folder': '[Gmail]/Sent Mail',
         'mail_email': cfg['gmail']['email'],
         'mail_password': cfg['gmail']['app_password'],
         'mail_label': cfg['gmail']['label'],
@@ -320,23 +320,23 @@ def process_mail(cfg, mid_str, msg, processed):
 def main():
     cfg = load_config()
     interval = cfg['gmail']['check_interval_seconds']
-    label = cfg['gmail'].get('label', 'DECK')
+    alias = cfg['gmail'].get('alias', 'deck@bt-conseil.net')
 
     print(f"  Deck Watcher démarré", flush=True)
-    print(f"  Surveillance : label Gmail {label}", flush=True)
+    print(f"  Surveillance : Envoyés → alias {alias}", flush=True)
+    print(f"  Marquage     : label @deck après traitement", flush=True)
     print(f"  Intervalle   : toutes les {interval}s", flush=True)
     print(f"  APP_URL : {cfg.get('app_url','NON DEFINI')}", flush=True)
     print(f"  Ctrl+C pour arrêter\n", flush=True)
 
     while True:
         print(f"  [{datetime.now().strftime('%H:%M:%S')}] Vérification...", flush=True)
-        processed = load_processed()
-        mails = fetch_deck_mails(cfg, processed)
+        mails = fetch_deck_mails(cfg)
         if mails:
             print(f"  {len(mails)} nouveau(x) mail(s)", flush=True)
             for mid_str, msg in mails:
                 try:
-                    process_mail(cfg, mid_str, msg, processed)
+                    process_mail(cfg, mid_str, msg)
                 except Exception as e:
                     print(f"  Erreur : {e}", flush=True)
         else:
