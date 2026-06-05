@@ -214,9 +214,20 @@ def fetch_deck_mails(cfg):
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
 
-        # Surveiller le dossier Envoyés
-        status, _ = mail.select('"[Gmail]/Sent Mail"')
-        if status != 'OK':
+        # Lister les dossiers pour debug
+        _, folders = mail.list()
+        for f in folders:
+            print(f"  DOSSIER: {f.decode()}", flush=True)
+
+        # Essayer plusieurs noms possibles pour les Envoyés
+        sent_folder = None
+        for candidate in ['"[Gmail]/Sent Mail"', '"[Gmail]/Messages envoy&AOk-s"', 'Sent', '"Sent Mail"']:
+            status, _ = mail.select(candidate)
+            if status == 'OK':
+                sent_folder = candidate
+                print(f"  Envoyés trouvé : {candidate}", flush=True)
+                break
+        if not sent_folder:
             print(f"  Impossible d'accéder aux Envoyés", flush=True)
             mail.logout()
             return []
