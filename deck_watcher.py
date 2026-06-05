@@ -219,7 +219,7 @@ def fetch_deck_mails(cfg, processed):
             mail.logout()
             return []
 
-        since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
+        since = (datetime.now() - timedelta(days=2)).strftime("%d-%b-%Y")
         _, data = mail.search(None, f'SINCE {since}')
         mail_ids = data[0].split()
         print(f"  {len(mail_ids)} mail(s) trouvés depuis {since} (label {label})", flush=True)
