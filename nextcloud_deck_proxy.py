@@ -606,7 +606,7 @@ async function loadHistory(){
     }
     list.innerHTML = items.slice().reverse().map(item=>`
       <div class="history-item">
-        <div class="history-date">${item.mail_date||item.date} — <span style="color:${item.action==='Exclu'?'var(--err)':'var(--ok)'};">${item.action==='Exclu'?'Exclu':'Traité'}</span></div>
+        <div class="history-date">${item.mail_date||item.date} — <span style="color:${item.action==='Exclu'?'var(--err)':'var(--ok)'};">${item.action==='Exclu'?'Mail exclu':'Mail traité'}</span></div>
         <div class="history-titre" title="${item.subject||item.titre}">${item.subject||item.titre}</div>
       </div>
     `).join('');
