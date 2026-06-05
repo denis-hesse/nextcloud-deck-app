@@ -150,11 +150,11 @@ HTML = r"""<!DOCTYPE html>
     
     <div class="g2">
       <div class="f">
-        <label class="lbl">Tableau (Board)</label>
+        <label class="lbl">Tableau</label>
         <select id="board" onchange="onBoardChange()"><option value="">— sélectionner —</option></select>
       </div>
       <div class="f">
-        <label class="lbl">Liste (Stack)</label>
+        <label class="lbl">Liste</label>
         <select id="stack"><option value="">— sélectionner —</option></select>
       </div>
     </div>
@@ -606,8 +606,8 @@ async function loadHistory(){
     }
     list.innerHTML = items.slice().reverse().map(item=>`
       <div class="history-item">
-        <div class="history-date">${item.date} — <span style="color:${item.action==='Exclu'?'var(--err)':'var(--ok)'};">${item.action||'Créé'}</span></div>
-        <div class="history-titre" title="${item.titre}">${item.titre}</div>
+        <div class="history-date">${item.mail_date||item.date} — <span style="color:${item.action==='Exclu'?'var(--err)':'var(--ok)'};">${item.action==='Exclu'?'Exclu':'Traité'}</span></div>
+        <div class="history-titre" title="${item.subject||item.titre}">${item.subject||item.titre}</div>
       </div>
     `).join('');
   } catch(e){}
@@ -906,6 +906,9 @@ class Handler(BaseHTTPRequestHandler):
         action=data.get('action','Créé')
         print(f"  mark-processed: mid={mid} titre_ext='{titre_ext}' action={action}", flush=True)
         processed_mids.add(mid)
+        # Récupérer subject et mail_date depuis la file avant de la modifier
+        subject_courant = prefill_queue[0].get('subject','') if prefill_queue else ''
+        mail_date_courant = prefill_queue[0].get('mail_date','') if prefill_queue else ''
         # titre_ext = titre saisi dans l'interface (priorité max)
         titre_courant = titre_ext if titre_ext else (prefill_queue[0].get('titre','') if prefill_queue else str(mid))
         # Retirer le mail traité de la file
@@ -924,6 +927,8 @@ class Handler(BaseHTTPRequestHandler):
         now_paris = datetime.now(tz=timezone.utc).astimezone(TZ_PARIS)
         history_log.append({
             'date': now_paris.strftime('%d/%m/%Y %H:%M'),
+            'mail_date': mail_date_courant,
+            'subject': subject_courant,
             'titre': titre_courant,
             'action': action
         })
