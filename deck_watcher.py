@@ -14,7 +14,7 @@ def load_config():
         'gmail': {
             'email': os.environ.get('GMAIL_EMAIL', ''),
             'app_password': os.environ.get('GMAIL_APP_PASSWORD', ''),
-            'alias': os.environ.get('GMAIL_ALIAS', 'deck@bt-conseil.net'),
+            'alias': os.environ.get('GMAIL_ALIAS', ''),
             'label': os.environ.get('GMAIL_LABEL', '@deck'),
             'label_id': os.environ.get('GMAIL_LABEL_ID', 'Label_1497049481571525327'),
             'check_interval_seconds': int(os.environ.get('CHECK_INTERVAL', '30'))
@@ -207,7 +207,10 @@ def apply_deck_label(cfg, mid_str):
 def fetch_deck_mails(cfg):
     """Récupère les mails envoyés à l'alias deck@ sans le label @deck (non traités)."""
     try:
-        alias = cfg['gmail'].get('alias', 'deck@bt-conseil.net')
+        alias = cfg['gmail'].get('alias', '')
+        if not alias:
+            print(f"  GMAIL_ALIAS non défini, watcher inactif.", flush=True)
+            return []
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
 
@@ -320,7 +323,7 @@ def process_mail(cfg, mid_str, msg):
 def main():
     cfg = load_config()
     interval = cfg['gmail']['check_interval_seconds']
-    alias = cfg['gmail'].get('alias', 'deck@bt-conseil.net')
+    alias = cfg['gmail'].get('alias', '')
 
     print(f"  Deck Watcher démarré", flush=True)
     print(f"  Surveillance : Envoyés → alias {alias}", flush=True)
