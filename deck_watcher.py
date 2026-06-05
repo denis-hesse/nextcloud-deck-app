@@ -186,19 +186,16 @@ def send_prefill(app_url, port, data):
     print(f"  Formulaire prêt.", flush=True)
 
 def apply_deck_label(cfg, mid_str):
-    """Applique le label @deck sur le mail via Gmail API pour marquer comme traité."""
-    import base64
-    label_id = cfg['gmail'].get('label_id', 'Label_1497049481571525327')
+    """Applique le label @deck sur le mail via IMAP pour marquer comme traité."""
     email_addr = cfg['gmail']['email']
     app_password = cfg['gmail']['app_password']
     try:
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(email_addr, app_password)
-        # Sélectionner Envoyés pour accéder au message
-        mail.select('"[Gmail]/Sent Mail"')
-        # Appliquer le label via commande IMAP STORE
-        mail.store(mid_str.encode() if isinstance(mid_str, str) else mid_str,
-                   '+X-GM-LABELS', f'"@deck"')
+        # OBLIGATOIRE : sélectionner un dossier avant STORE
+        mail.select('"[Gmail]/Messages envoy&AOk-s"')
+        mid_bytes = mid_str.encode() if isinstance(mid_str, str) else mid_str
+        mail.store(mid_bytes, '+X-GM-LABELS', '"@deck"')
         mail.logout()
         print(f"  ✓ Label @deck appliqué (mid={mid_str})", flush=True)
     except Exception as e:
@@ -214,20 +211,10 @@ def fetch_deck_mails(cfg):
         mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         mail.login(cfg['gmail']['email'], cfg['gmail']['app_password'])
 
-        # Lister les dossiers pour debug
-        _, folders = mail.list()
-        for f in folders:
-            print(f"  DOSSIER: {f.decode()}", flush=True)
-
-        # Essayer plusieurs noms possibles pour les Envoyés
-        sent_folder = None
-        for candidate in ['"[Gmail]/Sent Mail"', '"[Gmail]/Messages envoy&AOk-s"', 'Sent', '"Sent Mail"']:
-            status, _ = mail.select(candidate)
-            if status == 'OK':
-                sent_folder = candidate
-                print(f"  Envoyés trouvé : {candidate}", flush=True)
-                break
-        if not sent_folder:
+        # Sélectionner le dossier Envoyés Gmail (encodage UTF-7 modifié)
+        sent_folder = '"[Gmail]/Messages envoy&AOk-s"'
+        status, _ = mail.select(sent_folder)
+        if status != 'OK':
             print(f"  Impossible d'accéder aux Envoyés", flush=True)
             mail.logout()
             return []
